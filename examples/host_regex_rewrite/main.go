@@ -3,6 +3,8 @@ package main
 import (
 	"github.com/tetratelabs/proxy-wasm-go-sdk/proxywasm"
 	"github.com/tetratelabs/proxy-wasm-go-sdk/proxywasm/types"
+	"math/rand"
+	"time"
 )
 
 func main() {
@@ -16,6 +18,14 @@ type rootContext struct {
 }
 
 func newRootContext(uint32) proxywasm.RootContext { return &rootContext{} }
+
+func (ctx *rootContext) OnVMStart(vmConfigurationSize int) types.OnVMStartStatus {
+	rand.Seed(time.Now().UnixNano())
+
+	proxywasm.LogInfo("proxy_on_vm_start from Go!")
+
+	return types.OnVMStartStatusOK
+}
 
 // Override DefaultRootContext.
 func (*rootContext) NewHttpContext(contextID uint32) proxywasm.HttpContext {
