@@ -81,6 +81,14 @@ func ProxyHttpCall(upstreamData *byte, upstreamSize int32, headerData *byte, hea
 //go:wasmimport env proxy_call_foreign_function
 func ProxyCallForeignFunction(funcNamePtr *byte, funcNameSize int32, paramPtr *byte, paramSize int32, returnData unsafe.Pointer, returnSize *int32) Status
 
+//go:wasmimport env proxy_redis_init
+func ProxyRedisInit(upstreamData *byte, upstreamSize int, usernameData *byte, usernameSize int,
+	passwordData *byte, passwordSize int, timeout uint32,
+) Status
+
+//go:wasmimport env proxy_redis_call
+func ProxyRedisCall(upstreamData *byte, upstreamSize int, queryData *byte, querySize int, calloutIDPtr *uint32) Status
+
 //go:wasmimport env proxy_set_tick_period_milliseconds
 func ProxySetTickPeriodMilliseconds(period uint32) Status
 
