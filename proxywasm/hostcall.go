@@ -19,8 +19,8 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/tetratelabs/proxy-wasm-go-sdk/proxywasm/internal"
-	"github.com/tetratelabs/proxy-wasm-go-sdk/proxywasm/types"
+	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/internal"
+	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
 )
 
 // GetVMConfiguration is used for retrieving configurations given in the "vm_config.configuration" field.

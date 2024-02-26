@@ -15,8 +15,8 @@
 package proxywasm
 
 import (
-	"github.com/tetratelabs/proxy-wasm-go-sdk/proxywasm/internal"
-	"github.com/tetratelabs/proxy-wasm-go-sdk/proxywasm/types"
+	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/internal"
+	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
 )
 
 // SetVMContext is the entrypoint for setting up the entire Wasm VM.

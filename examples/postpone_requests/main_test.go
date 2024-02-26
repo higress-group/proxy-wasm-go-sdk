@@ -10,8 +10,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/tetratelabs/proxy-wasm-go-sdk/proxywasm/proxytest"
-	"github.com/tetratelabs/proxy-wasm-go-sdk/proxywasm/types"
+	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/proxytest"
+	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
 )
 
 func TestSetEffectiveContext(t *testing.T) {

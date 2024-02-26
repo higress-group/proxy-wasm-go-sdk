@@ -4,7 +4,7 @@ import (
 	"errors"
 	"strconv"
 
-	"github.com/tetratelabs/proxy-wasm-go-sdk/proxywasm/types"
+	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
 )
 
 type BufferType uint32
@@ -19,7 +19,7 @@ const (
 	BufferTypeVMConfiguration      BufferType = 6
 	BufferTypePluginConfiguration  BufferType = 7
 	BufferTypeCallData             BufferType = 8
-	BufferTypeRedisCallResponse	   BufferType = 9
+	BufferTypeRedisCallResponse    BufferType = 9
 )
 
 type LogLevel uint32

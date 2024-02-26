@@ -16,7 +16,7 @@
 
 package internal
 
-import "github.com/tetratelabs/proxy-wasm-go-sdk/proxywasm/types"
+import "github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
 
 func VMStateReset() {
 	// (@mathetake) I assume that the currentState be protected by lock on hostMux

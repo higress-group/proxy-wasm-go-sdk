@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/tetratelabs/proxy-wasm-go-sdk/proxywasm/proxytest"
+	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/proxytest"
 )
 
 func TestGetPropertyBool(t *testing.T) {

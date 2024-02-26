@@ -1,12 +1,12 @@
-module github.com/tetratelabs/proxy-wasm-go-sdk/examples/foreign_call_on_tick
+module github.com/higress-group/proxy-wasm-go-sdk/examples/foreign_call_on_tick
 
 go 1.19
 
-replace github.com/tetratelabs/proxy-wasm-go-sdk => ../..
+replace github.com/higress-group/proxy-wasm-go-sdk => ../..
 
 require (
 	github.com/stretchr/testify v1.8.4
-	github.com/tetratelabs/proxy-wasm-go-sdk v0.0.0-00010101000000-000000000000
+	github.com/higress-group/proxy-wasm-go-sdk v0.0.0-00010101000000-000000000000
 )
 
 require (
