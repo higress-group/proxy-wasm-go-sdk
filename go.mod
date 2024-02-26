@@ -1,4 +1,4 @@
-module github.com/tetratelabs/proxy-wasm-go-sdk
+module github.com/higress-group/proxy-wasm-go-sdk
 
 go 1.19
 
