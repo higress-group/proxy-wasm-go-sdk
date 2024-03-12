@@ -111,14 +111,11 @@ func RedisInit(
 
 func DispatchRedisCall(
 	cluster string,
-	query string,
+	query []byte,
 	callBack func(status, responseSize int),
 ) (calloutID uint32, err error) {
-	qp := internal.StringBytePtr(query)
-	ql := len(query)
-
 	u := internal.StringBytePtr(cluster)
-	switch st := internal.ProxyRedisCall(u, len(cluster), qp, ql, &calloutID); st {
+	switch st := internal.ProxyRedisCall(u, len(cluster), &query[0], len(query), &calloutID); st {
 	case internal.StatusOK:
 		internal.RegisterRedisCallout(calloutID, callBack)
 		return calloutID, nil
