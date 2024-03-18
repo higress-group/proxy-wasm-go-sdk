@@ -57,6 +57,8 @@ type ProxyWasmHost interface {
 	ProxyGetBufferBytes(bufferType BufferType, start int, maxSize int, returnBufferData **byte, returnBufferSize *int) Status
 	ProxySetBufferBytes(bufferType BufferType, start int, maxSize int, bufferData *byte, bufferSize int) Status
 	ProxyHttpCall(upstreamData *byte, upstreamSize int, headerData *byte, headerSize int, bodyData *byte, bodySize int, trailersData *byte, trailersSize int, timeout uint32, calloutIDPtr *uint32) Status
+	ProxyRedisInit(upstreamData *byte, upstreamSize int, usernameData *byte, usernameSize int, passwordData *byte, passwordSize int, timeout uint32) Status
+	ProxyRedisCall(upstreamData *byte, upstreamSize int, queryData *byte, querySize int, calloutIDPtr *uint32) Status
 	ProxyCallForeignFunction(funcNamePtr *byte, funcNameSize int, paramPtr *byte, paramSize int, returnData **byte, returnSize *int) Status
 	ProxySetTickPeriodMilliseconds(period uint32) Status
 	ProxySetEffectiveContext(contextID uint32) Status
@@ -128,6 +130,12 @@ func (d DefaultProxyWAMSHost) ProxySetBufferBytes(bufferType BufferType, start i
 	return 0
 }
 func (d DefaultProxyWAMSHost) ProxyHttpCall(upstreamData *byte, upstreamSize int, headerData *byte, headerSize int, bodyData *byte, bodySize int, trailersData *byte, trailersSize int, timeout uint32, calloutIDPtr *uint32) Status {
+	return 0
+}
+func (d DefaultProxyWAMSHost) ProxyRedisInit(upstreamData *byte, upstreamSize int, usernameData *byte, usernameSize int, passwordData *byte, passwordSize int, timeout uint32) Status {
+	return 0
+}
+func (d DefaultProxyWAMSHost) ProxyRedisCall(upstreamData *byte, upstreamSize int, queryData *byte, querySize int, calloutIDPtr *uint32) Status {
 	return 0
 }
 func (d DefaultProxyWAMSHost) ProxyCallForeignFunction(funcNamePtr *byte, funcNameSize int, paramPtr *byte, paramSize int, returnData **byte, returnSize *int) Status {
@@ -232,6 +240,15 @@ func ProxyHttpCall(upstreamData *byte, upstreamSize int, headerData *byte, heade
 	bodySize int, trailersData *byte, trailersSize int, timeout uint32, calloutIDPtr *uint32) Status {
 	return currentHost.ProxyHttpCall(upstreamData, upstreamSize,
 		headerData, headerSize, bodyData, bodySize, trailersData, trailersSize, timeout, calloutIDPtr)
+}
+
+func ProxyRedisInit(upstreamData *byte, upstreamSize int, usernameData *byte, usernameSize int,
+	passwordData *byte, passwordSize int, timeout uint32) Status {
+	return currentHost.ProxyRedisInit(upstreamData, upstreamSize, usernameData, usernameSize, passwordData, passwordSize, timeout)
+}
+
+func ProxyRedisCall(upstreamData *byte, upstreamSize int, queryData *byte, querySize int, calloutIDPtr *uint32) Status {
+	return currentHost.ProxyRedisCall(upstreamData, upstreamSize, queryData, querySize, calloutIDPtr)
 }
 
 func ProxyCallForeignFunction(funcNamePtr *byte, funcNameSize int, paramPtr *byte, paramSize int, returnData **byte, returnSize *int) Status {
