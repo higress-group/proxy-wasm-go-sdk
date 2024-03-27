@@ -12,15 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build !proxy_wasm_version_0_2_100
+//go:build proxy_wasm_version_0_2_100
 
-package internal
+package abi
 
-import "time"
-
-//export proxy_abi_version_0_2_0
+//export proxy_abi_version_0_2_100
 func proxyABIVersion() {
-	if recordTiming {
-		defer logTiming("proxyABIVersion", time.Now())
-	}
 }

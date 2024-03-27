@@ -20,6 +20,7 @@ import (
 	"math"
 
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/internal"
+	_ "github.com/higress-group/proxy-wasm-go-sdk/proxywasm/internal/proxy_wasm_version/0_2_100/abi"
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
 )
 
