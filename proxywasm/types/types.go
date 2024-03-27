@@ -24,6 +24,32 @@ const (
 	ActionContinue Action = 0
 	// ActionPause means that the host pauses the processing.
 	ActionPause Action = 1
+
+	// You can check here for an explanation of the return action during the http header processing phase:
+	// https://github.com/envoyproxy/envoy/blob/9f5627d381ba78427e85c3798664de9593e269c1/envoy/http/filter.h#L34
+
+	// FilterHeadersStatus::Continue
+	HeaderContinue Action = 0
+	// FilterHeadersStatus::StopIteration
+	HeaderStopIteration Action = 1
+	// FilterHeadersStatus::ContinueAndEndStream
+	HeaderContinueAndEndStream Action = 2
+	// FilterHeadersStatus::StopAllIterationAndBuffer
+	HeaderStopAllIterationAndBuffer Action = 3
+	// FilterHeadersStatus::StopAllIterationAndWatermark
+	HeaderStopAllIterationAndWatermark Action = 4
+
+	// You can check here for an explanation of the return action during the http body processing phase:
+	// https://github.com/envoyproxy/envoy/blob/9f5627d381ba78427e85c3798664de9593e269c1/envoy/http/filter.h#L125
+
+	// FilterDataStatus::Continue
+	DataContinue Action = 0
+	// FilterDataStatus::StopIterationAndBuffer
+	DataStopIterationAndBuffer Action = 1
+	// FilterDataStatus::StopIterationAndWatermark
+	DataStopIterationAndWatermark Action = 2
+	// FilterDataStatus::StopIterationNoBuffer
+	DataStopIterationNoBuffer Action = 3
 )
 
 // PeerType represents the type of a peer of a connection.
