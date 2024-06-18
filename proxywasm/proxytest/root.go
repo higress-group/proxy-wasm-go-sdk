@@ -268,6 +268,21 @@ func (r *rootHostEmulator) ProxyHttpCall(upstreamData *byte, upstreamSize int, h
 }
 
 // impl internal.ProxyWasmHost
+func (r *rootHostEmulator) ProxyRedisInit(upstreamData *byte, upstreamSize int, usernameData *byte, usernameSize int, passwordData *byte, passwordSize int, timeout uint32) internal.Status {
+	upstream := internal.RawBytePtrToString(upstreamData, upstreamSize)
+	username := internal.RawBytePtrToString(usernameData, usernameSize)
+	password := internal.RawBytePtrToString(passwordData, passwordSize)
+
+	log.Printf("[redis init] upstream: %s", upstream)
+	log.Printf("[redis init] username: %s", username)
+	log.Printf("[redis init] password: %s", password)
+
+	//TODO: implement
+
+	return internal.StatusOK
+}
+
+// impl internal.ProxyWasmHost
 func (r *rootHostEmulator) ProxyRedisCall(commandData *byte, commandSize int, keyData *byte, keySize int,
 	elementData *byte, elementSize int, cas *uint32) internal.Status {
 	command := internal.RawBytePtrToString(commandData, commandSize)
@@ -277,6 +292,8 @@ func (r *rootHostEmulator) ProxyRedisCall(commandData *byte, commandSize int, ke
 	log.Printf("[redis call] command: %s", command)
 	log.Printf("[redis call] key: %s", key)
 	log.Printf("[redis call] element: %s", element)
+
+	// TODO: implement
 
 	return internal.StatusOK
 }
