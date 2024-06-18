@@ -268,6 +268,20 @@ func (r *rootHostEmulator) ProxyHttpCall(upstreamData *byte, upstreamSize int, h
 }
 
 // impl internal.ProxyWasmHost
+func (r *rootHostEmulator) ProxyRedisCall(commandData *byte, commandSize int, keyData *byte, keySize int,
+	elementData *byte, elementSize int, cas *uint32) internal.Status {
+	command := internal.RawBytePtrToString(commandData, commandSize)
+	key := internal.RawBytePtrToString(keyData, keySize)
+	element := internal.RawBytePtrToString(elementData, elementSize)
+
+	log.Printf("[redis call] command: %s", command)
+	log.Printf("[redis call] key: %s", key)
+	log.Printf("[redis call] element: %s", element)
+
+	return internal.StatusOK
+}
+
+// impl internal.ProxyWasmHost
 func (r *rootHostEmulator) RegisterForeignFunction(name string, f func([]byte) []byte) {
 	r.foreignFunctions[name] = f
 }
