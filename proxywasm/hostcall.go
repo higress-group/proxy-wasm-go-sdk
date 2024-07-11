@@ -523,7 +523,7 @@ func ResumeHttpResponse() error {
 // stop further processing of the initial HTTP request/response.
 // Note that the gRPCStatus can be set to -1 if this is a not gRPC stream.
 func SendHttpResponse(statusCode uint32, headers [][2]string, body []byte, gRPCStatus int32) error {
-	return SendHttpResponseV2(statusCode, "", headers, body, gRPCStatus)
+	return SendHttpResponseWithDetail(statusCode, "", headers, body, gRPCStatus)
 }
 
 // SendHttpResponseV2 sends an HTTP response to the downstream with given information (headers, statusCodeDetailData, statusCode, body).
