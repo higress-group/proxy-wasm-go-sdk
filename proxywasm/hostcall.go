@@ -523,7 +523,23 @@ func ResumeHttpResponse() error {
 // stop further processing of the initial HTTP request/response.
 // Note that the gRPCStatus can be set to -1 if this is a not gRPC stream.
 func SendHttpResponse(statusCode uint32, headers [][2]string, body []byte, gRPCStatus int32) error {
+	return SendHttpResponseV2(statusCode, "", headers, body, gRPCStatus)
+}
+
+// SendHttpResponseV2 sends an HTTP response to the downstream with given information (headers, statusCodeDetailData, statusCode, body).
+// The function returns an error if used outside the types.HttpContext.
+// You cannot use this call after types.HttpContext.OnHttpResponseHeaders returns
+// Continue because the response headers may have already arrived downstream, and
+// there is no way to override the headers that were already sent.
+// After you've invoked this function, you *must* return types.Action.Pause to
+// stop further processing of the initial HTTP request/response.
+// Note that the gRPCStatus can be set to -1 if this is a not gRPC stream.
+func SendHttpResponseWithDetail(statusCode uint32, statusCodeDetailData string, headers [][2]string, body []byte, gRPCStatus int32) error {
 	shs := internal.SerializeMap(headers)
+	var dp *byte
+	if len(statusCodeDetailData) > 0 {
+		dp = &[]byte(statusCodeDetailData)[0]
+	}
 	var bp *byte
 	if len(body) > 0 {
 		bp = &body[0]
@@ -532,7 +548,7 @@ func SendHttpResponse(statusCode uint32, headers [][2]string, body []byte, gRPCS
 	hl := len(shs)
 	return internal.StatusToError(
 		internal.ProxySendLocalResponse(
-			statusCode, nil, 0,
+			statusCode, dp, 0,
 			bp, len(body), hp, hl, gRPCStatus,
 		),
 	)
