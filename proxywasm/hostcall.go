@@ -534,7 +534,7 @@ func SendHttpResponse(statusCode uint32, headers [][2]string, body []byte, gRPCS
 // After you've invoked this function, you *must* return types.Action.Pause to
 // stop further processing of the initial HTTP request/response.
 // Note that the gRPCStatus can be set to -1 if this is a not gRPC stream.
-func SendHttpResponseV2(statusCode uint32, statusCodeDetailData string, headers [][2]string, body []byte, gRPCStatus int32) error {
+func SendHttpResponseWithDetail(statusCode uint32, statusCodeDetailData string, headers [][2]string, body []byte, gRPCStatus int32) error {
 	shs := internal.SerializeMap(headers)
 	var dp *byte
 	if len(statusCodeDetailData) > 0 {
