@@ -19,10 +19,16 @@ import (
 	"fmt"
 	"math"
 
+	_ "github.com/higress-group/nottinygc"
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/internal"
 	_ "github.com/higress-group/proxy-wasm-go-sdk/proxywasm/internal/proxy_wasm_version/0_2_100/abi"
 	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
 )
+
+//export sched_yield
+func sched_yield() int32 {
+	return 0
+}
 
 // GetVMConfiguration is used for retrieving configurations given in the "vm_config.configuration" field.
 // This hostcall is only available during types.PluginContext.OnVMStart call.
