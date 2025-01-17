@@ -1,6 +1,6 @@
 module github.com/higress-group/proxy-wasm-go-sdk
 
-go 1.23.2
+go 1.23
 
 require (
 	github.com/higress-group/nottinygc v0.0.0-20231101025119-e93c4c2f8520
