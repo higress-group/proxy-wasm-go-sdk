@@ -15,22 +15,38 @@
 package internal
 
 import (
-	"reflect"
 	"testing"
 	"unsafe"
 
 	"github.com/stretchr/testify/require"
 )
 
-func Test_StringBytePtr(t *testing.T) {
-	exp := "abcd"
-	ptr := StringBytePtr(exp)
+func TestStringBytePtr(t *testing.T) {
+	input := "hello"
+	expected := []byte("hello")
 
-	//nolint
-	actual := *(*string)(unsafe.Pointer(&reflect.SliceHeader{
-		Data: uintptr(unsafe.Pointer(ptr)),
-		Len:  len(exp),
-		Cap:  len(exp),
-	}))
-	require.Equal(t, exp, actual)
+	result := StringBytePtr(input)
+	for i := range expected {
+		require.Equal(t, expected[i], *(*byte)(unsafe.Pointer(uintptr(unsafe.Pointer(result)) + uintptr(i))))
+	}
+}
+
+func TestRawBytePtrToString(t *testing.T) {
+	input := []byte("hello")
+	inputPtr := &input[0]
+	size := 5
+	expected := "hello"
+
+	result := RawBytePtrToString(inputPtr, size)
+	require.Equal(t, expected, result)
+}
+
+func TestRawBytePtrToByteSlice(t *testing.T) {
+	input := []byte("hello")
+	inputPtr := &input[0]
+	size := 5
+	expected := []byte("hello")
+
+	result := RawBytePtrToByteSlice(inputPtr, size)
+	require.Equal(t, expected, result)
 }
