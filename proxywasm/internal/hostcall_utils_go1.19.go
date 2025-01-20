@@ -12,23 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:build !go1.20
+
 package internal
 
 import (
 	"unsafe"
 )
 
-// StringBytePtr uses unsafe to convert a string to a raw byte pointer.
 func StringBytePtr(msg string) *byte {
-	return unsafe.StringData(msg)
-}
-
-// RawBytePtrToString uses unsafe to convert a raw byte pointer to a string.
-func RawBytePtrToString(raw *byte, size int) string {
-	return unsafe.String(raw, size)
-}
-
-// RawBytePtrToByteSlice uses unsafe to convert a raw byte pointer to a byte slice.
-func RawBytePtrToByteSlice(raw *byte, size int) []byte {
-	return unsafe.Slice(raw, size)
+	if len(msg) == 0 {
+		return nil
+	}
+	bt := *(*[]byte)(unsafe.Pointer(&msg))
+	return &bt[0]
 }
