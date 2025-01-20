@@ -8,7 +8,7 @@ on:
       - main
 
 env:
-  TINYGO_VERSION: 0.35.0
+  TINYGO_VERSION: 0.30.0
 
 jobs:
   style:
@@ -18,7 +18,7 @@ jobs:
       - name: install Go
         uses: actions/setup-go@v3
         with:
-          go-version: '1.23'
+          go-version: '1.21'
 
       - name: checkout
         uses: actions/checkout@v3
@@ -36,7 +36,7 @@ jobs:
       - name: install Go
         uses: actions/setup-go@v3
         with:
-          go-version: '1.23'
+          go-version: '1.21'
 
       - name: checkout
         uses: actions/checkout@v3
@@ -83,7 +83,7 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v3
         with:
-          go-version: '1.23'
+          go-version: '1.21'
 
       - name: Install TinyGo
         run: |
