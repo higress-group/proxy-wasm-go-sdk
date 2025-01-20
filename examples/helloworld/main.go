@@ -36,7 +36,7 @@ type vmContext struct {
 
 // Override types.DefaultVMContext.
 func (*vmContext) NewPluginContext(contextID uint32) types.PluginContext {
-	return &helloWorld{contextID: contextID}
+	return &helloWorld{}
 }
 
 type helloWorld struct {
@@ -48,6 +48,8 @@ type helloWorld struct {
 
 // Override types.DefaultPluginContext.
 func (ctx *helloWorld) OnPluginStart(pluginConfigurationSize int) types.OnPluginStartStatus {
+	rand.Seed(time.Now().UnixNano())
+
 	proxywasm.LogInfo("OnPluginStart from Go!")
 	if err := proxywasm.SetTickPeriodMilliSeconds(tickMilliseconds); err != nil {
 		proxywasm.LogCriticalf("failed to set tick period: %v", err)

@@ -1,6 +1,6 @@
 module github.com/higress-group/proxy-wasm-go-sdk/examples/helloworld
 
-go 1.23.2
+go 1.19
 
 replace github.com/higress-group/proxy-wasm-go-sdk => ../..
 

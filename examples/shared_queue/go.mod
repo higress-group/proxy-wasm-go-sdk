@@ -1,6 +1,6 @@
 module github.com/higress-group/proxy-wasm-go-sdk/examples/shared_queue
 
-go 1.23
+go 1.19
 
 replace github.com/higress-group/proxy-wasm-go-sdk => ../..
 
