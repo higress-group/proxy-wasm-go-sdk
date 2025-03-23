@@ -1,11 +1,11 @@
-module github.com/proxy-wasm/proxy-wasm-go-sdk/examples/properties
+module github.com/higress-group/proxy-wasm-go-sdk/examples/properties
 
 go 1.24
 
-replace github.com/proxy-wasm/proxy-wasm-go-sdk => ../..
+replace github.com/higress-group/proxy-wasm-go-sdk => ../..
 
 require (
-	github.com/proxy-wasm/proxy-wasm-go-sdk v0.0.0-00010101000000-000000000000
+	github.com/higress-group/proxy-wasm-go-sdk v0.0.0-00010101000000-000000000000
 	github.com/stretchr/testify v1.9.0
 )
 

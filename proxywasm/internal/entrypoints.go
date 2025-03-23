@@ -14,7 +14,7 @@
 
 package internal
 
-import "github.com/proxy-wasm/proxy-wasm-go-sdk/proxywasm/types"
+import "github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
 
 // elidedVmContext is registered when the plugin author uses a
 // SetPluginContext, SetHttpContext, or SetTcpContext entrypoint. It indicates

@@ -19,8 +19,8 @@ import (
 	"strings"
 	"unsafe"
 
-	"github.com/proxy-wasm/proxy-wasm-go-sdk/proxywasm/internal"
-	"github.com/proxy-wasm/proxy-wasm-go-sdk/proxywasm/types"
+	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/internal"
+	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
 )
 
 type (

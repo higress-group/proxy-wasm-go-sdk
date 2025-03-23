@@ -1,4 +1,4 @@
-module github.com/proxy-wasm/proxy-wasm-go-sdk
+module github.com/higress-group/proxy-wasm-go-sdk
 
 go 1.24
 

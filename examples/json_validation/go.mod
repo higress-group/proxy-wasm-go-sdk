@@ -1,11 +1,11 @@
-module github.com/proxy-wasm/proxy-wasm-go-sdk/examples/json_validation
+module github.com/higress-group/proxy-wasm-go-sdk/examples/json_validation
 
 go 1.24
 
-replace github.com/proxy-wasm/proxy-wasm-go-sdk => ../..
+replace github.com/higress-group/proxy-wasm-go-sdk => ../..
 
 require (
-	github.com/proxy-wasm/proxy-wasm-go-sdk v0.16.0
+	github.com/higress-group/proxy-wasm-go-sdk v0.16.0
 	github.com/stretchr/testify v1.9.0
 	github.com/tidwall/gjson v1.14.1
 )

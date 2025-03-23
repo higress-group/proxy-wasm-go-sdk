@@ -7,8 +7,8 @@ package main
 import (
 	"testing"
 
-	"github.com/proxy-wasm/proxy-wasm-go-sdk/proxywasm/proxytest"
-	"github.com/proxy-wasm/proxy-wasm-go-sdk/proxywasm/types"
+	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/proxytest"
+	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
 	"github.com/stretchr/testify/require"
 )
 

@@ -39,7 +39,7 @@ end-users. This SDK is an alpha product.
 ## Installation
 
 ```
-go get github.com/proxy-wasm/proxy-wasm-go-sdk
+go get github.com/higress-group/proxy-wasm-go-sdk
 ```
 
 ## Minimal Example Plugin
@@ -50,8 +50,8 @@ A minimal `main.go` plugin defining VM and Plugin contexts:
 package main
 
 import (
-    "github.com/proxy-wasm/proxy-wasm-go-sdk/proxywasm"
-    "github.com/proxy-wasm/proxy-wasm-go-sdk/proxywasm/types"
+    "github.com/higress-group/proxy-wasm-go-sdk/proxywasm"
+    "github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
 )
 
 func main() {}
