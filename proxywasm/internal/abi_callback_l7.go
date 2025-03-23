@@ -130,8 +130,8 @@ func proxyOnHttpCallResponse(pluginContextID, calloutID uint32, numHeaders, body
 	}
 }
 
-//export proxy_on_redis_call_response
-func proxyOnRedisCallResponse(pluginContextID, calloutID uint32, status, responseSize int) {
+//go:wasmexport proxy_on_redis_call_response
+func proxyOnRedisCallResponse(pluginContextID, calloutID uint32, status, responseSize int32) {
 	root, ok := currentState.pluginContexts[pluginContextID]
 	if !ok {
 		panic("redis_call_response on invalid plugin context")
@@ -154,6 +154,6 @@ func proxyOnRedisCallResponse(pluginContextID, calloutID uint32, status, respons
 	// for already-deleted context id. See https://github.com/tetratelabs/proxy-wasm-go-sdk/issues/261 for detail.
 	if _, ok := currentState.contextIDToRootID[ctxID]; ok {
 		ProxySetEffectiveContext(ctxID)
-		cb.callback(status, responseSize)
+		cb.callback(int(status), int(responseSize))
 	}
 }

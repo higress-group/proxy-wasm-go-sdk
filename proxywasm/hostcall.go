@@ -102,7 +102,7 @@ func RedisInit(
 	c := internal.StringBytePtr(cluster)
 	u := internal.StringBytePtr(username)
 	p := internal.StringBytePtr(password)
-	switch st := internal.ProxyRedisInit(c, len(cluster), u, len(username), p, len(password), timeout); st {
+	switch st := internal.ProxyRedisInit(c, int32(len(cluster)), u, int32(len(username)), p, int32(len(password)), timeout); st {
 	case internal.StatusOK:
 		return nil
 	default:
@@ -119,7 +119,7 @@ func DispatchRedisCall(
 	ql := len(query)
 
 	u := internal.StringBytePtr(cluster)
-	switch st := internal.ProxyRedisCall(u, len(cluster), qp, ql, &calloutID); st {
+	switch st := internal.ProxyRedisCall(u, int32(len(cluster)), qp, int32(ql), &calloutID); st {
 	case internal.StatusOK:
 		internal.RegisterRedisCallout(calloutID, callBack)
 		return calloutID, nil
