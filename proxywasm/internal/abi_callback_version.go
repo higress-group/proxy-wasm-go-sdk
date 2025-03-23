@@ -16,7 +16,7 @@ package internal
 
 import "time"
 
-//go:wasmexport proxy_abi_version_0_2_0
+//go:wasmexport proxy_abi_version_0_2_100
 func proxyABIVersion() {
 	if recordTiming {
 		defer logTiming("proxyABIVersion", time.Now())
