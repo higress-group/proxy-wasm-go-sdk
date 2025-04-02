@@ -548,7 +548,7 @@ func SendHttpResponseWithDetail(statusCode uint32, statusCodeDetailData string, 
 	hl := int32(len(shs))
 	return internal.StatusToError(
 		internal.ProxySendLocalResponse(
-			statusCode, dp, 0,
+			statusCode, dp, int32(len(statusCodeDetailData)),
 			bp, int32(len(body)), hp, hl, gRPCStatus,
 		),
 	)
