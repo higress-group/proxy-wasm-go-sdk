@@ -15,44 +15,62 @@
 package main
 
 import (
-	"github.com/tetratelabs/proxy-wasm-go-sdk/proxywasm"
-	"github.com/tetratelabs/proxy-wasm-go-sdk/proxywasm/types"
+	"fmt"
+
+	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm"
+	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
 )
 
-const queueName = "http_headers"
-
 func main() {
-	proxywasm.SetNewRootContext(newRootContext)
+	proxywasm.SetVMContext(&vmContext{})
 }
 
-type receiverRootContext struct {
-	// You'd better embed the default root context
-	// so that you don't need to reimplement all the methods by yourself.
-	proxywasm.DefaultRootContext
+type vmContext struct {
+	// Embed the default VM context here,
+	// so that we don't need to reimplement all the methods.
+	types.DefaultVMContext
 }
 
-func newRootContext(uint32) proxywasm.RootContext {
-	return &receiverRootContext{}
+// Override types.DefaultVMContext.
+func (*vmContext) NewPluginContext(contextID uint32) types.PluginContext {
+	return &receiverPluginContext{contextID: contextID}
 }
 
-// Override DefaultRootContext.
-func (ctx *receiverRootContext) OnVMStart(vmConfigurationSize int) types.OnVMStartStatus {
-	queueID, err := proxywasm.RegisterSharedQueue(queueName)
+type receiverPluginContext struct {
+	// Embed the default plugin context here,
+	// so that we don't need to reimplement all the methods.
+	contextID uint32
+	types.DefaultPluginContext
+	queueName string
+}
+
+// Override types.DefaultPluginContext.
+func (ctx *receiverPluginContext) OnPluginStart(pluginConfigurationSize int) types.OnPluginStartStatus {
+	// Get Plugin configuration.
+	config, err := proxywasm.GetPluginConfiguration()
+	if err != nil {
+		panic(fmt.Sprintf("failed to get plugin config: %v", err))
+	}
+
+	// Treat the config as the queue name for receiving.
+	ctx.queueName = string(config)
+
+	queueID, err := proxywasm.RegisterSharedQueue(ctx.queueName)
 	if err != nil {
 		panic("failed register queue")
 	}
-	proxywasm.LogInfof("queue \"%s\" registered as id=%d", queueName, queueID)
-	return types.OnVMStartStatusOK
+	proxywasm.LogInfof("queue \"%s\" registered as queueID=%d by contextID=%d", ctx.queueName, queueID, ctx.contextID)
+	return types.OnPluginStartStatusOK
 }
 
-// Override DefaultRootContext.
-func (ctx *receiverRootContext) OnQueueReady(queueID uint32) {
+// Override types.DefaultPluginContext.
+func (ctx *receiverPluginContext) OnQueueReady(queueID uint32) {
 	data, err := proxywasm.DequeueSharedQueue(queueID)
 	switch err {
 	case types.ErrorStatusEmpty:
 		return
 	case nil:
-		proxywasm.LogInfof("dequeued data: %s", string(data))
+		proxywasm.LogInfof("(contextID=%d) dequeued data from %s(queueID=%d): %s", ctx.contextID, ctx.queueName, queueID, string(data))
 	default:
 		proxywasm.LogCriticalf("error retrieving data from queue %d: %v", queueID, err)
 	}

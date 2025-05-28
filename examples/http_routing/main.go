@@ -15,48 +15,84 @@
 package main
 
 import (
-	"math/rand"
-	"time"
+	"crypto/rand"
+	"encoding/binary"
 
-	"github.com/tetratelabs/proxy-wasm-go-sdk/proxywasm"
-	"github.com/tetratelabs/proxy-wasm-go-sdk/proxywasm/types"
+	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm"
+	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
 )
 
 func main() {
-	proxywasm.SetNewRootContext(newRootContext)
+	proxywasm.SetVMContext(&vmContext{})
 }
 
-type rootContext struct {
-	// You'd better embed the default root context
-	// so that you don't need to reimplement all the methods by yourself.
-	proxywasm.DefaultRootContext
+type vmContext struct {
+	// Embed the default VM context here,
+	// so that we don't need to reimplement all the methods.
+	types.DefaultVMContext
 }
 
-func newRootContext(uint32) proxywasm.RootContext { return &rootContext{} }
+// Override types.DefaultVMContext.
+func (*vmContext) NewPluginContext(contextID uint32) types.PluginContext {
+	return &pluginContext{}
+}
 
-// Override DefaultRootContext.
-func (*rootContext) NewHttpContext(contextID uint32) proxywasm.HttpContext {
-	return &httpRouting{}
+type pluginContext struct {
+	// Embed the default plugin context here,
+	// so that we don't need to reimplement all the methods.
+	types.DefaultPluginContext
+
+	diceOverride uint32 // For unit test
+}
+
+// Override types.DefaultPluginContext.
+func (ctx *pluginContext) OnPluginStart(pluginConfigurationSize int) types.OnPluginStartStatus {
+	data, err := proxywasm.GetPluginConfiguration()
+	if err != nil && err != types.ErrorStatusNotFound {
+		proxywasm.LogCriticalf("error reading plugin configuration: %v", err)
+		return types.OnPluginStartStatusFailed
+	}
+
+	// If the configuration data is not empty, we use its value to override the routing
+	// decision for unit tests.
+	if len(data) > 0 {
+		ctx.diceOverride = uint32(data[0])
+	}
+
+	return types.OnPluginStartStatusOK
+}
+
+// Override types.DefaultPluginContext.
+func (ctx *pluginContext) NewHttpContext(contextID uint32) types.HttpContext {
+	return &httpRouting{diceOverride: ctx.diceOverride}
 }
 
 type httpRouting struct {
-	// You'd better embed the default root context
-	// so that you don't need to reimplement all the methods by yourself.
-	proxywasm.DefaultHttpContext
+	// Embed the default http context here,
+	// so that we don't need to reimplement all the methods.
+	types.DefaultHttpContext
+
+	diceOverride uint32 // For unit test
 }
 
-// Unittest purpose.
-var now = func() int {
-	rand.Seed(time.Now().UnixNano())
-	return rand.Int()
+// dice returns a random value to be used to determine the route.
+func dice() uint32 {
+	buf := make([]byte, 4)
+	_, _ = rand.Read(buf)
+	return binary.LittleEndian.Uint32(buf)
 }
 
-// Override DefaultHttpContext.
+// Override types.DefaultHttpContext.
 func (ctx *httpRouting) OnHttpRequestHeaders(numHeaders int, endOfStream bool) types.Action {
 	// Randomly routing to the canary cluster.
-	dice := now()
-	proxywasm.LogInfof("dice: %d\n", dice)
-	if dice%2 == 0 {
+	var value uint32
+	if ctx.diceOverride != 0 {
+		value = ctx.diceOverride
+	} else {
+		value = dice()
+	}
+	proxywasm.LogInfof("value: %d\n", value)
+	if value%2 == 0 {
 		const authorityKey = ":authority"
 		value, err := proxywasm.GetHttpRequestHeader(authorityKey)
 		if err != nil {
@@ -65,7 +101,7 @@ func (ctx *httpRouting) OnHttpRequestHeaders(numHeaders int, endOfStream bool) t
 		}
 		// Append "-canary" suffix to route this request to the canary cluster.
 		value += "-canary"
-		if err := proxywasm.SetHttpRequestHeader(":authority", value); err != nil {
+		if err := proxywasm.ReplaceHttpRequestHeader(":authority", value); err != nil {
 			proxywasm.LogCritical("failed to set request header: test")
 			return types.ActionPause
 		}

@@ -15,51 +15,65 @@
 package main
 
 import (
-	"github.com/tetratelabs/proxy-wasm-go-sdk/proxywasm"
-	"github.com/tetratelabs/proxy-wasm-go-sdk/proxywasm/types"
+	"fmt"
+
+	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm"
+	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
 )
 
 func main() {
-	proxywasm.SetNewRootContext(newRootContext)
+	proxywasm.SetVMContext(&vmContext{})
 }
 
-var counter proxywasm.MetricCounter
-
-const metricsName = "proxy_wasm_go.request_counter"
-
-type metricRootContext struct {
-	// You'd better embed the default root context
-	// so that you don't need to reimplement all the methods by yourself.
-	proxywasm.DefaultRootContext
+type vmContext struct {
+	// Embed the default VM context here,
+	// so that we don't need to reimplement all the methods.
+	types.DefaultVMContext
 }
 
-func newRootContext(uint32) proxywasm.RootContext {
-	return &metricRootContext{}
+// Override types.DefaultVMContext.
+func (*vmContext) NewPluginContext(contextID uint32) types.PluginContext {
+	return &metricPluginContext{}
 }
 
-// Override DefaultRootContext.
-func (ctx *metricRootContext) OnVMStart(vmConfigurationSize int) types.OnVMStartStatus {
-	counter = proxywasm.DefineCounterMetric(metricsName)
-	return types.OnVMStartStatusOK
+type metricPluginContext struct {
+	// Embed the default plugin context here,
+	// so that we don't need to reimplement all the methods.
+	types.DefaultPluginContext
 }
 
-// Override DefaultRootContext.
-func (*metricRootContext) NewHttpContext(contextID uint32) proxywasm.HttpContext {
+// Override types.DefaultPluginContext.
+func (ctx *metricPluginContext) NewHttpContext(contextID uint32) types.HttpContext {
 	return &metricHttpContext{}
 }
 
 type metricHttpContext struct {
-	// You'd better embed the default http context
-	// so that you don't need to reimplement all the methods by yourself.
-	proxywasm.DefaultHttpContext
+	// Embed the default http context here,
+	// so that we don't need to reimplement all the methods.
+	types.DefaultHttpContext
 }
 
-// Override DefaultHttpContext.
-func (ctx *metricHttpContext) OnHttpRequestHeaders(numHeaders int, endOfStream bool) types.Action {
-	prev := counter.Get()
-	proxywasm.LogInfof("previous value of %s: %d", metricsName, prev)
+const (
+	customHeaderKey         = "my-custom-header"
+	customHeaderValueTagKey = "value"
+)
 
-	counter.Increment(1)
-	proxywasm.LogInfo("incremented")
+var counters = map[string]proxywasm.MetricCounter{}
+
+// Override types.DefaultHttpContext.
+func (ctx *metricHttpContext) OnHttpRequestHeaders(numHeaders int, endOfStream bool) types.Action {
+	customHeaderValue, err := proxywasm.GetHttpRequestHeader(customHeaderKey)
+	if err == nil {
+		counter, ok := counters[customHeaderValue]
+		if !ok {
+			// This metric is processed as: custom_header_value_counts{value="foo",reporter="wasmgosdk"} n.
+			// The extraction rule is defined in envoy.yaml as a bootstrap configuration.
+			// See https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/metrics/v3/stats.proto#config-metrics-v3-statsconfig.
+			fqn := fmt.Sprintf("custom_header_value_counts_%s=%s_reporter=wasmgosdk", customHeaderValueTagKey, customHeaderValue)
+			counter = proxywasm.DefineCounterMetric(fqn)
+			counters[customHeaderValue] = counter
+		}
+		counter.Increment(1)
+	}
 	return types.ActionContinue
 }

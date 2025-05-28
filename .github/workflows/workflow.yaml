@@ -1,4 +1,4 @@
-name: test
+name: Test
 on:
   pull_request:
     branches:
@@ -7,18 +7,21 @@ on:
     branches:
       - main
 
+env:
+  TINYGO_VERSION: 0.30.0
+
 jobs:
   style:
     name: Code style check
     runs-on: ubuntu-latest
     steps:
       - name: install Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
-          go-version: '1.16.3'
+          go-version: '1.21'
 
       - name: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: run lint
         run: make lint
@@ -31,75 +34,78 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: install Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
-          go-version: '1.16.3'
+          go-version: '1.21'
 
       - name: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: run tests
         run: make test
 
-  build-examples:
-    name: Build examples
-    runs-on: ubuntu-latest
-    container:
-      image: tinygo/tinygo:0.17.0
-    steps:
-      - name: install Go
-        uses: actions/setup-go@v2
-        with:
-          go-version: '1.16.3'
-
-      # TinyGo's release container does not have Make command.
-      - name: install Make
-        run: apt install make
-
-      - name: checkout
-        uses: actions/checkout@v2
-
-      - name: cache built examples
-        uses: actions/cache@v2
-        id: cache-built-examples
-        with:
-          path: examples
-          key: examples-${{ hashFiles('examples/**', 'proxywasm/**') }}
-
-      - name: build examples
-        if: steps.cache-built-examples.outputs.cache-hit != 'true'
-        run: make build.examples
-
-  e2e-tests:
+  examples:
+    name: Examples (${{ matrix.envoy-image }})
     strategy:
       fail-fast: false
       matrix:
-        image: [ "envoyproxy/envoy:v1.18.2", "istio/proxyv2:1.9.3", "istio/proxyv2:1.10.0" ]
-    name: E2E Test (${{ matrix.image }})
-    needs: build-examples
+        envoy-image: [
+          "envoyproxy/envoy-dev:latest",
+          "envoyproxy/envoy:v1.21-latest",
+          "envoyproxy/envoy:v1.22-latest",
+          "envoyproxy/envoy:v1.23-latest",
+          "envoyproxy/envoy:v1.24-latest",
+          "envoyproxy/envoy:v1.25-latest",
+          "envoyproxy/envoy:v1.26-latest",
+          "envoyproxy/envoy:v1.27-latest",
+          "envoyproxy/envoy:v1.28-latest",
+          "istio/proxyv2:1.16.0",
+          "istio/proxyv2:1.17.0",
+          "istio/proxyv2:1.18.0",
+          "istio/proxyv2:1.19.0",
+          "istio/proxyv2:1.20.0",
+        ]
     runs-on: ubuntu-latest
-    container:
-      image: ${{ matrix.image }}
-      options: --privileged
     steps:
-      - name: install Go
-        uses: actions/setup-go@v2
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Build cache
+        uses: actions/cache@v3
         with:
-          go-version: '1.16.3'
+          path: |
+            ~/.cache/go-build
+            ~/.cache/tinygo
+            ~/go/pkg/mod
+            ~/go/bin
+          key: examples-${{ hashFiles('**/go.mod', '**/go.sum') }}-v${{ env.TINYGO_VERSION }}
 
-      - name: install Make
-        run: apt update && apt install make
-
-      - name: checkout
-        uses: actions/checkout@v2
-
-      - name: fetch built examples
-        uses: actions/cache@v2
+      - name: Install Go
+        uses: actions/setup-go@v3
         with:
-          path: examples
-          key: examples-${{ hashFiles('examples/**', 'proxywasm/**') }}
+          go-version: '1.21'
 
-      - name: run e2e test
-        run: make test.e2e
+      - name: Install TinyGo
+        run: |
+          gh release download v${TINYGO_VERSION} -p '*.linux-amd64.tar.gz' -D ~ -R github.com/tinygo-org/tinygo
+          tar -xf ~/tinygo${TINYGO_VERSION}.linux-amd64.tar.gz  -C $HOME
+          echo "$HOME/tinygo/bin" >> $GITHUB_PATH
         env:
-          CGO_ENABLED: "0"
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build examples
+        run: make build.examples
+
+      - name: Test examples
+        run: make test.examples
+
+      - name: Install Envoy
+        run: |
+          export ENVOY_BIN_DIR=$HOME/envoy/bin
+          mkdir -p $ENVOY_BIN_DIR
+          docker run -v $ENVOY_BIN_DIR:/tmp/proxy-wasm-go-sdk -w /tmp/proxy-wasm-go-sdk \
+            --entrypoint /bin/cp ${{ matrix.envoy-image }} /usr/local/bin/envoy .
+          echo $ENVOY_BIN_DIR >> $GITHUB_PATH
+
+      - name: Run e2e test
+        run: make test.e2e

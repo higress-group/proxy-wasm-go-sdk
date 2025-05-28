@@ -1,16 +1,6 @@
-// Copyright 2020-2021 Tetrate
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-// http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// The framework emulates the expected behavior of Envoyproxy, and you can test your extensions without running Envoy and with
+// the standard Go CLI. To run tests, simply run
+// go test ./...
 
 package main
 
@@ -19,35 +9,31 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/tetratelabs/proxy-wasm-go-sdk/proxytest"
-	"github.com/tetratelabs/proxy-wasm-go-sdk/proxywasm/types"
+	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/proxytest"
+	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
 )
 
 func TestNetwork_OnNewConnection(t *testing.T) {
-	opt := proxytest.NewEmulatorOption().
-		WithNewRootContext(newRootContext)
-	host := proxytest.NewHostEmulator(opt)
-	// Release the host emulation lock so that other test cases can insert their own host emulation.
-	defer host.Done()
+	opt := proxytest.NewEmulatorOption().WithVMContext(&vmContext{})
+	host, reset := proxytest.NewHostEmulator(opt)
+	defer reset()
 
-	// Call OnVMStart -> initialize metric
-	require.Equal(t, types.OnVMStartStatusOK, host.StartVM())
+	// Initialize plugin
+	require.Equal(t, types.OnPluginStartStatusOK, host.StartPlugin())
 
 	// OnNewConnection is called.
 	_, action := host.InitializeConnection()
 	require.Equal(t, types.ActionContinue, action)
 
 	// Check Envoy logs.
-	logs := host.GetLogs(types.LogLevelInfo)
+	logs := host.GetInfoLogs()
 	require.Contains(t, logs, "new connection!")
 }
 
 func TestNetwork_OnDownstreamClose(t *testing.T) {
-	opt := proxytest.NewEmulatorOption().
-		WithNewRootContext(newRootContext)
-	host := proxytest.NewHostEmulator(opt)
-	// Release the host emulation lock so that other test cases can insert their own host emulation.
-	defer host.Done()
+	opt := proxytest.NewEmulatorOption().WithVMContext(&vmContext{})
+	host, reset := proxytest.NewHostEmulator(opt)
+	defer reset()
 
 	// OnNewConnection is called.
 	contextID, action := host.InitializeConnection()
@@ -57,16 +43,14 @@ func TestNetwork_OnDownstreamClose(t *testing.T) {
 	host.CloseDownstreamConnection(contextID)
 
 	// Check Envoy logs.
-	logs := host.GetLogs(types.LogLevelInfo)
+	logs := host.GetInfoLogs()
 	require.Contains(t, logs, "downstream connection close!")
 }
 
 func TestNetwork_OnDownstreamData(t *testing.T) {
-	opt := proxytest.NewEmulatorOption().
-		WithNewRootContext(newRootContext)
-	host := proxytest.NewHostEmulator(opt)
-	// Release the host emulation lock so that other test cases can insert their own host emulation.
-	defer host.Done()
+	opt := proxytest.NewEmulatorOption().WithVMContext(&vmContext{})
+	host, reset := proxytest.NewHostEmulator(opt)
+	defer reset()
 
 	// OnNewConnection is called.
 	contextID, action := host.InitializeConnection()
@@ -78,16 +62,14 @@ func TestNetwork_OnDownstreamData(t *testing.T) {
 	host.CallOnDownstreamData(contextID, data)
 
 	// Check Envoy logs.
-	logs := host.GetLogs(types.LogLevelInfo)
+	logs := host.GetInfoLogs()
 	require.Contains(t, logs, ">>>>>> downstream data received >>>>>>\n"+msg)
 }
 
 func TestNetwork_OnUpstreamData(t *testing.T) {
-	opt := proxytest.NewEmulatorOption().
-		WithNewRootContext(newRootContext)
-	host := proxytest.NewHostEmulator(opt)
-	// Release the host emulation lock so that other test cases can insert their own host emulation.
-	defer host.Done()
+	opt := proxytest.NewEmulatorOption().WithVMContext(&vmContext{})
+	host, reset := proxytest.NewHostEmulator(opt)
+	defer reset()
 
 	// OnNewConnection is called.
 	contextID, action := host.InitializeConnection()
@@ -99,16 +81,14 @@ func TestNetwork_OnUpstreamData(t *testing.T) {
 	host.CallOnUpstreamData(contextID, data)
 
 	// Check Envoy logs.
-	logs := host.GetLogs(types.LogLevelInfo)
+	logs := host.GetInfoLogs()
 	require.Contains(t, logs, "<<<<<< upstream data received <<<<<<\n"+msg)
 }
 
 func TestNetwork_counter(t *testing.T) {
-	opt := proxytest.NewEmulatorOption().
-		WithNewRootContext(newRootContext)
-	host := proxytest.NewHostEmulator(opt)
-	// Release the host emulation lock so that other test cases can insert their own host emulation.
-	defer host.Done()
+	opt := proxytest.NewEmulatorOption().WithVMContext(&vmContext{})
+	host, reset := proxytest.NewHostEmulator(opt)
+	defer reset()
 
 	// Call OnVMStart -> initialize metric
 	require.Equal(t, types.OnVMStartStatusOK, host.StartVM())
@@ -121,7 +101,7 @@ func TestNetwork_counter(t *testing.T) {
 	host.CompleteConnection(contextID)
 
 	// Check Envoy logs.
-	logs := host.GetLogs(types.LogLevelInfo)
+	logs := host.GetInfoLogs()
 	require.Contains(t, logs, "connection complete!")
 
 	// Check counter metric.

@@ -30,17 +30,21 @@ static_resources:
                       type_url: type.googleapis.com/envoy.extensions.filters.http.wasm.v3.Wasm
                       value:
                         config:
-                          name: "my_plugin"
-                          root_id: "my_root_id"
+                          configuration:
+                            "@type": type.googleapis.com/google.protobuf.StringValue
+                            value: |
+                              {
+                                "header": "x-wasm-header",
+                                "value": "demo-wasm"
+                              }
                           vm_config:
-                            vm_id: "my_vm_id"
                             runtime: "envoy.wasm.runtime.v8"
                             code:
                               local:
-                                filename: "./examples/http_headers/main.go.wasm"
-                            allow_precompiled: true
+                                filename: "./examples/http_headers/main.wasm"
                   - name: envoy.filters.http.router
-                    typed_config: {}
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
 
     - name: staticreply
       address:
@@ -69,7 +73,8 @@ static_resources:
                               inline_string: "example body\n"
                 http_filters:
                   - name: envoy.filters.http.router
-                    typed_config: {}
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
 
   clusters:
     - name: web_service

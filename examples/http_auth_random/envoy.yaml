@@ -30,17 +30,14 @@ static_resources:
                       type_url: type.googleapis.com/envoy.extensions.filters.http.wasm.v3.Wasm
                       value:
                         config:
-                          name: "my_plugin"
-                          root_id: "my_root_id"
                           vm_config:
-                            vm_id: "my_vm_id"
                             runtime: "envoy.wasm.runtime.v8"
                             code:
                               local:
-                                filename: "./examples/http_auth_random/main.go.wasm"
-                            allow_precompiled: true
+                                filename: "./examples/http_auth_random/main.wasm"
                   - name: envoy.filters.http.router
-                    typed_config: {}
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
 
   clusters:
     - name: httpbin

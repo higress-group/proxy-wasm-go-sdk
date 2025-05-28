@@ -15,59 +15,57 @@
 package main
 
 import (
-	"github.com/tetratelabs/proxy-wasm-go-sdk/proxywasm"
-	"github.com/tetratelabs/proxy-wasm-go-sdk/proxywasm/types"
-)
-
-var (
-	connectionCounterName = "proxy_wasm_go.connection_counter"
-	counter               proxywasm.MetricCounter
+	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm"
+	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
 )
 
 func main() {
-	proxywasm.SetNewRootContext(newRootContext)
+	proxywasm.SetVMContext(&vmContext{})
 }
 
-func newRootContext(contextID uint32) proxywasm.RootContext {
-	return &rootContext{}
+type vmContext struct {
+	// Embed the default VM context here,
+	// so that we don't need to reimplement all the methods.
+	types.DefaultVMContext
 }
 
-type rootContext struct {
-	// You'd better embed the default root context
-	// so that you don't need to reimplement all the methods by yourself.
-	proxywasm.DefaultRootContext
+// Override types.DefaultVMContext.
+func (*vmContext) NewPluginContext(contextID uint32) types.PluginContext {
+	return &pluginContext{counter: proxywasm.DefineCounterMetric("proxy_wasm_go.connection_counter")}
 }
 
-// Override DefaultRootContext.
-func (ctx *rootContext) OnVMStart(vmConfigurationSize int) types.OnVMStartStatus {
-	counter = proxywasm.DefineCounterMetric(connectionCounterName)
-	return types.OnVMStartStatusOK
+type pluginContext struct {
+	// Embed the default plugin context here,
+	// so that we don't need to reimplement all the methods.
+	types.DefaultPluginContext
+	counter proxywasm.MetricCounter
 }
 
-// Override DefaultRootContext.
-func (ctx *rootContext) NewStreamContext(contextID uint32) proxywasm.StreamContext {
-	return &networkContext{}
+// Override types.DefaultPluginContext.
+func (ctx *pluginContext) NewTcpContext(contextID uint32) types.TcpContext {
+	return &networkContext{counter: ctx.counter}
 }
 
 type networkContext struct {
-	// You'd better embed the default stream context
-	// so that you don't need to reimplement all the methods by yourself.
-	proxywasm.DefaultStreamContext
+	// Embed the default tcp context here,
+	// so that we don't need to reimplement all the methods.
+	types.DefaultTcpContext
+	counter proxywasm.MetricCounter
 }
 
-// Override DefaultStreamContext.
+// Override types.DefaultTcpContext.
 func (ctx *networkContext) OnNewConnection() types.Action {
 	proxywasm.LogInfo("new connection!")
 	return types.ActionContinue
 }
 
-// Override DefaultStreamContext.
+// Override types.DefaultTcpContext.
 func (ctx *networkContext) OnDownstreamData(dataSize int, endOfStream bool) types.Action {
 	if dataSize == 0 {
 		return types.ActionContinue
 	}
 
-	data, err := proxywasm.GetDownStreamData(0, dataSize)
+	data, err := proxywasm.GetDownstreamData(0, dataSize)
 	if err != nil && err != types.ErrorStatusNotFound {
 		proxywasm.LogCriticalf("failed to get downstream data: %v", err)
 		return types.ActionContinue
@@ -77,25 +75,36 @@ func (ctx *networkContext) OnDownstreamData(dataSize int, endOfStream bool) type
 	return types.ActionContinue
 }
 
-// Override DefaultStreamContext.
+// Override types.DefaultTcpContext.
 func (ctx *networkContext) OnDownstreamClose(types.PeerType) {
 	proxywasm.LogInfo("downstream connection close!")
 	return
 }
 
-// Override DefaultStreamContext.
+// Override types.DefaultTcpContext.
 func (ctx *networkContext) OnUpstreamData(dataSize int, endOfStream bool) types.Action {
 	if dataSize == 0 {
 		return types.ActionContinue
 	}
 
-	ret, err := proxywasm.GetProperty([]string{"upstream", "address"})
+	// Get the remote ip address of the upstream cluster.
+	address, err := proxywasm.GetProperty([]string{"upstream", "address"})
 	if err != nil {
-		proxywasm.LogCriticalf("failed to get upstream data: %v", err)
-		return types.ActionContinue
+		proxywasm.LogWarnf("failed to get upstream remote address: %v", err)
 	}
 
-	proxywasm.LogInfof("remote address: %s", string(ret))
+	proxywasm.LogInfof("remote address: %s", string(address))
+
+	// Get the upstream cluster's metadata in the cluster configuration.
+	metadataKeyValues, err := proxywasm.GetPropertyMap([]string{"cluster_metadata", "filter_metadata", "location"})
+	if err != nil {
+		proxywasm.LogWarnf("failed to get upstream location metadata: %v", err)
+	}
+
+	for _, metadata := range metadataKeyValues {
+		key, value := metadata[0], metadata[1]
+		proxywasm.LogInfof("upstream cluster metadata location[%s]=%s", string(key), string(value))
+	}
 
 	data, err := proxywasm.GetUpstreamData(0, dataSize)
 	if err != nil && err != types.ErrorStatusNotFound {
@@ -106,8 +115,8 @@ func (ctx *networkContext) OnUpstreamData(dataSize int, endOfStream bool) types.
 	return types.ActionContinue
 }
 
-// Override DefaultStreamContext.
+// Override types.DefaultTcpContext.
 func (ctx *networkContext) OnStreamDone() {
-	counter.Increment(1)
+	ctx.counter.Increment(1)
 	proxywasm.LogInfo("connection complete!")
 }

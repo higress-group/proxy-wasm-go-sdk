@@ -1,62 +1,75 @@
-// Copyright 2020-2021 Tetrate
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-// http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// The framework emulates the expected behavior of Envoyproxy, and you can test your extensions without running Envoy and with
+// the standard Go CLI. To run tests, simply run
+// go test ./...
 
 package main
 
 import (
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/tetratelabs/proxy-wasm-go-sdk/proxytest"
-	"github.com/tetratelabs/proxy-wasm-go-sdk/proxywasm/types"
+	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/proxytest"
+	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
 )
 
 func TestContext_OnPluginStart(t *testing.T) {
-	// Setup configurations.
-	pluginConfigData := `tinygo plugin configuration`
-	opt := proxytest.NewEmulatorOption().
-		WithPluginConfiguration([]byte(pluginConfigData)).
-		WithNewRootContext(newRootContext)
+	vmTest(t, func(t *testing.T, vm types.VMContext) {
+		// Setup configurations.
+		pluginConfigData := `tinygo plugin configuration`
+		opt := proxytest.NewEmulatorOption().
+			WithPluginConfiguration([]byte(pluginConfigData)).
+			WithVMContext(vm)
+		host, reset := proxytest.NewHostEmulator(opt)
+		defer reset()
 
-	host := proxytest.NewHostEmulator(opt)
-	// Release the host emulation lock so that other test cases can insert their own host emulation.
-	defer host.Done()
+		// Call OnPluginStart.
+		require.Equal(t, types.OnPluginStartStatusOK, host.StartPlugin())
 
-	// Call OnPluginStart.
-	require.Equal(t, types.OnPluginStartStatusOK, host.StartPlugin())
-
-	// Check Envoy logs.
-	logs := host.GetLogs(types.LogLevelInfo)
-	require.Contains(t, logs, "plugin config: "+pluginConfigData)
+		// Check Envoy logs.
+		logs := host.GetInfoLogs()
+		require.Contains(t, logs, "plugin config: "+pluginConfigData)
+	})
 }
 
 func TestContext_OnVMStart(t *testing.T) {
-	// Setup configurations.
-	vmConfigData := `tinygo vm configuration`
-	opt := proxytest.NewEmulatorOption().
-		WithVMConfiguration([]byte(vmConfigData)).
-		WithNewRootContext(newRootContext)
+	vmTest(t, func(t *testing.T, vm types.VMContext) {
+		// Setup configurations.
+		vmConfigData := `tinygo vm configuration`
+		opt := proxytest.NewEmulatorOption().
+			WithVMConfiguration([]byte(vmConfigData)).
+			WithVMContext(vm)
+		host, reset := proxytest.NewHostEmulator(opt)
+		defer reset()
 
-	host := proxytest.NewHostEmulator(opt)
-	// Release the host emulation lock so that other test cases can insert their own host emulation.
-	defer host.Done()
+		// Call OnVMStart.
+		require.Equal(t, types.OnVMStartStatusOK, host.StartVM())
 
-	// Call OnVMStart.
-	require.Equal(t, types.OnVMStartStatusOK, host.StartVM())
+		// Check Envoy logs.
+		logs := host.GetInfoLogs()
+		require.Contains(t, logs, "vm config: "+vmConfigData)
+	})
+}
 
-	// Check Envoy logs.
-	logs := host.GetLogs(types.LogLevelInfo)
-	require.Contains(t, logs, "vm config: "+vmConfigData)
+// vmTest executes f twice, once with a types.VMContext that executes plugin code directly
+// in the host, and again by executing the plugin code within the compiled main.wasm binary.
+// Execution with main.wasm will be skipped if the file cannot be found.
+func vmTest(t *testing.T, f func(*testing.T, types.VMContext)) {
+	t.Helper()
+
+	t.Run("go", func(t *testing.T) {
+		f(t, &vmContext{})
+	})
+
+	t.Run("wasm", func(t *testing.T) {
+		wasm, err := os.ReadFile("main.wasm")
+		if err != nil {
+			t.Skip("wasm not found")
+		}
+		v, err := proxytest.NewWasmVMContext(wasm)
+		require.NoError(t, err)
+		defer v.Close()
+		f(t, v)
+	})
 }

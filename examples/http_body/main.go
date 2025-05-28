@@ -15,35 +15,49 @@
 package main
 
 import (
-	"strconv"
+	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm"
+	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
+)
 
-	"github.com/tetratelabs/proxy-wasm-go-sdk/proxywasm"
-	"github.com/tetratelabs/proxy-wasm-go-sdk/proxywasm/types"
+const (
+	bufferOperationAppend  = "append"
+	bufferOperationPrepend = "prepend"
+	bufferOperationReplace = "replace"
 )
 
 func main() {
-	proxywasm.SetNewRootContext(newContext)
+	proxywasm.SetVMContext(&vmContext{})
 }
-func newContext(uint32) proxywasm.RootContext { return &rootContext{} }
 
-type rootContext struct {
-	// You'd better embed the default root context
-	// so that you don't need to reimplement all the methods by yourself.
-	proxywasm.DefaultRootContext
+type vmContext struct {
+	// Embed the default VM context here,
+	// so that we don't need to reimplement all the methods.
+	types.DefaultVMContext
+}
+
+// Override types.DefaultVMContext.
+func (*vmContext) NewPluginContext(contextID uint32) types.PluginContext {
+	return &pluginContext{}
+}
+
+type pluginContext struct {
+	// Embed the default plugin context here,
+	// so that we don't need to reimplement all the methods.
+	types.DefaultPluginContext
 	shouldEchoBody bool
 }
 
-// Override DefaultRootContext.
-func (ctx *rootContext) NewHttpContext(contextID uint32) proxywasm.HttpContext {
+// Override types.DefaultPluginContext.
+func (ctx *pluginContext) NewHttpContext(contextID uint32) types.HttpContext {
 	if ctx.shouldEchoBody {
 		return &echoBodyContext{}
 	}
 	return &setBodyContext{}
 }
 
-// Override DefaultRootContext.
-func (ctx *rootContext) OnPluginStart(pluginConfigurationSize int) types.OnPluginStartStatus {
-	data, err := proxywasm.GetPluginConfiguration(pluginConfigurationSize)
+// Override types.DefaultPluginContext.
+func (ctx *pluginContext) OnPluginStart(pluginConfigurationSize int) types.OnPluginStartStatus {
+	data, err := proxywasm.GetPluginConfiguration()
 	if err != nil {
 		proxywasm.LogCriticalf("error reading plugin configuration: %v", err)
 	}
@@ -52,68 +66,142 @@ func (ctx *rootContext) OnPluginStart(pluginConfigurationSize int) types.OnPlugi
 }
 
 type setBodyContext struct {
-	// You'd better embed the default root context
-	// so that you don't need to reimplement all the methods by yourself.
-	proxywasm.DefaultHttpContext
+	// Embed the default root http context here,
+	// so that we don't need to reimplement all the methods.
+	types.DefaultHttpContext
+	modifyResponse  bool
+	bufferOperation string
 }
 
-// Override DefaultHttpContext.
-func (ctx *setBodyContext) OnHttpRequestBody(bodySize int, endOfStream bool) types.Action {
-	proxywasm.LogInfof("body size: %d", bodySize)
-	if bodySize != 0 {
-		initialBody, err := proxywasm.GetHttpRequestBody(0, bodySize)
-		if err != nil {
-			proxywasm.LogErrorf("failed to get request body: %v", err)
-			return types.ActionContinue
-		}
-		proxywasm.LogInfof("initial request body: %s", string(initialBody))
-
-		b := []byte(`{ "another": "body" }`)
-
-		err = proxywasm.SetHttpRequestBody(b)
-		if err != nil {
-			proxywasm.LogErrorf("failed to set request body: %v", err)
-			return types.ActionContinue
-		}
-
-		proxywasm.LogInfof("on http request body finished")
+// Override types.DefaultHttpContext.
+func (ctx *setBodyContext) OnHttpRequestHeaders(numHeaders int, endOfStream bool) types.Action {
+	mode, err := proxywasm.GetHttpRequestHeader("buffer-replace-at")
+	if err == nil && mode == "response" {
+		ctx.modifyResponse = true
 	}
 
+	if _, err := proxywasm.GetHttpRequestHeader("content-length"); err != nil {
+		if err := proxywasm.SendHttpResponse(400, nil, []byte("content must be provided"), -1); err != nil {
+			panic(err)
+		}
+		return types.ActionPause
+	}
+
+	// Remove Content-Length in order to prevent severs from crashing if we set different body from downstream.
+	if err := proxywasm.RemoveHttpRequestHeader("content-length"); err != nil {
+		panic(err)
+	}
+
+	// Get "Buffer-Operation" header value.
+	op, err := proxywasm.GetHttpRequestHeader("buffer-operation")
+	if err != nil || (op != bufferOperationAppend &&
+		op != bufferOperationPrepend &&
+		op != bufferOperationReplace) {
+		// Fallback to replace
+		op = bufferOperationReplace
+	}
+	ctx.bufferOperation = op
+	return types.ActionContinue
+}
+
+// Override types.DefaultHttpContext.
+func (ctx *setBodyContext) OnHttpRequestBody(bodySize int, endOfStream bool) types.Action {
+	if ctx.modifyResponse {
+		return types.ActionContinue
+	}
+
+	if !endOfStream {
+		// Wait until we see the entire body to replace.
+		return types.ActionPause
+	}
+	// Being the body never been sent upstream so far, bodySize is the total size of the body received.
+	originalBody, err := proxywasm.GetHttpRequestBody(0, bodySize)
+	if err != nil {
+		proxywasm.LogErrorf("failed to get request body: %v", err)
+		return types.ActionContinue
+	}
+	proxywasm.LogInfof("original request body: %s", string(originalBody))
+
+	switch ctx.bufferOperation {
+	case bufferOperationAppend:
+		err = proxywasm.AppendHttpRequestBody([]byte(`[this is appended body]`))
+	case bufferOperationPrepend:
+		err = proxywasm.PrependHttpRequestBody([]byte(`[this is prepended body]`))
+	case bufferOperationReplace:
+		err = proxywasm.ReplaceHttpRequestBody([]byte(`[this is replaced body]`))
+	}
+	if err != nil {
+		proxywasm.LogErrorf("failed to %s request body: %v", ctx.bufferOperation, err)
+		return types.ActionContinue
+	}
+	return types.ActionContinue
+}
+
+// Override types.DefaultHttpContext.
+func (ctx *setBodyContext) OnHttpResponseHeaders(numHeaders int, endOfStream bool) types.Action {
+	if !ctx.modifyResponse {
+		return types.ActionContinue
+	}
+
+	// Remove Content-Length in order to prevent severs from crashing if we set different body.
+	if err := proxywasm.RemoveHttpResponseHeader("content-length"); err != nil {
+		panic(err)
+	}
+
+	return types.ActionContinue
+}
+
+// Override types.DefaultHttpContext.
+func (ctx *setBodyContext) OnHttpResponseBody(bodySize int, endOfStream bool) types.Action {
+	if !ctx.modifyResponse {
+		return types.ActionContinue
+	}
+
+	if !endOfStream {
+		// Wait until we see the entire body to replace.
+		return types.ActionPause
+	}
+
+	originalBody, err := proxywasm.GetHttpResponseBody(0, bodySize)
+	if err != nil {
+		proxywasm.LogErrorf("failed to get response body: %v", err)
+		return types.ActionContinue
+	}
+	proxywasm.LogInfof("original response body: %s", string(originalBody))
+
+	switch ctx.bufferOperation {
+	case bufferOperationAppend:
+		err = proxywasm.AppendHttpResponseBody([]byte(`[this is appended body]`))
+	case bufferOperationPrepend:
+		err = proxywasm.PrependHttpResponseBody([]byte(`[this is prepended body]`))
+	case bufferOperationReplace:
+		err = proxywasm.ReplaceHttpResponseBody([]byte(`[this is replaced body]`))
+	}
+	if err != nil {
+		proxywasm.LogErrorf("failed to %s response body: %v", ctx.bufferOperation, err)
+		return types.ActionContinue
+	}
 	return types.ActionContinue
 }
 
 type echoBodyContext struct {
-	// You'd better embed the default root context
+	// Embed the default plugin context
 	// so that you don't need to reimplement all the methods by yourself.
-	proxywasm.DefaultHttpContext
+	types.DefaultHttpContext
+	totalRequestBodySize int
 }
 
-func (ctx *echoBodyContext) OnHttpRequestHeaders(numHeaders int, endOfStream bool) types.Action {
-	var reject bool
-	clen, err := proxywasm.GetHttpRequestHeader("content-length")
-	if err != nil {
-		reject = true
-	} else if l, err := strconv.Atoi(clen); err != nil || l < 1 {
-		reject = true
-	}
-
-	if reject {
-		if err := proxywasm.SendHttpResponse(400, nil, []byte("content must be provided")); err != nil {
-			panic(err)
-		}
-		return types.ActionPause
-	}
-	return types.ActionContinue
-}
-
-// Override DefaultHttpContext.
+// Override types.DefaultHttpContext.
 func (ctx *echoBodyContext) OnHttpRequestBody(bodySize int, endOfStream bool) types.Action {
-	if bodySize != 0 {
-		body, _ := proxywasm.GetHttpRequestBody(0, bodySize)
-		if err := proxywasm.SendHttpResponse(200, nil, body); err != nil {
-			panic(err)
-		}
+	ctx.totalRequestBodySize = bodySize
+	if !endOfStream {
+		// Wait until we see the entire body to replace.
 		return types.ActionPause
+	}
+	// Send the request body as the response body.
+	body, _ := proxywasm.GetHttpRequestBody(0, bodySize)
+	if err := proxywasm.SendHttpResponse(200, nil, body, -1); err != nil {
+		panic(err)
 	}
 	return types.ActionPause
 }

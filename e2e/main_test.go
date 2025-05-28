@@ -26,6 +26,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -36,14 +37,9 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func checkMessage(str string, exps, nexps []string) bool {
+func checkMessage(str string, exps []string) bool {
 	for _, exp := range exps {
 		if !strings.Contains(str, exp) {
-			return false
-		}
-	}
-	for _, nexp := range nexps {
-		if strings.Contains(str, nexp) {
 			return false
 		}
 	}
@@ -60,13 +56,15 @@ func startEnvoy(t *testing.T, adminPort int) (stdErr *bytes.Buffer, kill func())
 	buf := new(bytes.Buffer)
 	cmd.Stderr = buf
 	require.NoError(t, cmd.Start())
-	require.Eventually(t, func() bool {
+	if !assert.Eventually(t, func() bool {
 		res, err := http.Get(fmt.Sprintf("http://localhost:%d/listeners", adminPort))
 		if err != nil {
 			return false
 		}
 		defer res.Body.Close()
 		return res.StatusCode == http.StatusOK
-	}, 5*time.Second, 100*time.Millisecond, "Envoy has not started")
+	}, 5*time.Second, 100*time.Millisecond, "Envoy has not started") {
+		t.Fatalf("Envoy stderr: %s", buf.String())
+	}
 	return buf, func() { require.NoError(t, cmd.Process.Kill()) }
 }

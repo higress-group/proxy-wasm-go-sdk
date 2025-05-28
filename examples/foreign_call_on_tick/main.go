@@ -17,40 +17,47 @@ package main
 import (
 	"encoding/hex"
 
-	"github.com/tetratelabs/proxy-wasm-go-sdk/proxywasm"
-	"github.com/tetratelabs/proxy-wasm-go-sdk/proxywasm/types"
+	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm"
+	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
 )
 
 const tickMilliseconds uint32 = 1
 
 func main() {
-	proxywasm.SetNewRootContext(newRootContext)
+	proxywasm.SetVMContext(&vmContext{})
 }
 
-type rootContext struct {
-	// You'd better embed the default root context
-	// so that you don't need to reimplement all the methods by yourself.
-	proxywasm.DefaultRootContext
+type vmContext struct {
+	// Embed the default VM context here,
+	// so that we don't need to reimplement all the methods.
+	types.DefaultVMContext
+}
+
+// Override types.DefaultVMContext.
+func (*vmContext) NewPluginContext(contextID uint32) types.PluginContext {
+	return &pluginContext{}
+}
+
+type pluginContext struct {
+	// Embed the default plugin context here,
+	// so that we don't need to reimplement all the methods.
+	types.DefaultPluginContext
 	contextID uint32
 	callNum   uint32
 }
 
-func newRootContext(contextID uint32) proxywasm.RootContext {
-	return &rootContext{contextID: contextID}
-}
-
-// Override DefaultRootContext.
-func (ctx *rootContext) OnVMStart(vmConfigurationSize int) types.OnVMStartStatus {
+// Override types.DefaultPluginContext.
+func (ctx *pluginContext) OnPluginStart(pluginConfigurationSize int) types.OnPluginStartStatus {
 	if err := proxywasm.SetTickPeriodMilliSeconds(tickMilliseconds); err != nil {
 		proxywasm.LogCriticalf("failed to set tick period: %v", err)
-		return types.OnVMStartStatusFailed
+		return types.OnPluginStartStatusFailed
 	}
 	proxywasm.LogInfof("set tick period milliseconds: %d", tickMilliseconds)
-	return types.OnVMStartStatusOK
+	return types.OnPluginStartStatusOK
 }
 
-// Override DefaultRootContext.
-func (ctx *rootContext) OnTick() {
+// Override types.DefaultPluginContext.
+func (ctx *pluginContext) OnTick() {
 	ctx.callNum++
 	ret, err := proxywasm.CallForeignFunction("compress", []byte("hello world!"))
 	if err != nil {

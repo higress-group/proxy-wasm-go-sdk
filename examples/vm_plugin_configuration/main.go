@@ -15,27 +15,18 @@
 package main
 
 import (
-	"github.com/tetratelabs/proxy-wasm-go-sdk/proxywasm"
-	"github.com/tetratelabs/proxy-wasm-go-sdk/proxywasm/types"
+	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm"
+	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
 )
 
 func main() {
-	proxywasm.SetNewRootContext(newRootContext)
+	proxywasm.SetVMContext(&vmContext{})
 }
 
-type context struct {
-	// You'd better embed the default root context
-	// so that you don't need to reimplement all the methods by yourself.
-	proxywasm.DefaultRootContext
-}
+type vmContext struct{}
 
-func newRootContext(contextID uint32) proxywasm.RootContext {
-	return &context{}
-}
-
-// Override DefaultRootContext.
-func (ctx context) OnVMStart(vmConfigurationSize int) types.OnVMStartStatus {
-	data, err := proxywasm.GetVMConfiguration(vmConfigurationSize)
+func (*vmContext) OnVMStart(vmConfigurationSize int) types.OnVMStartStatus {
+	data, err := proxywasm.GetVMConfiguration()
 	if err != nil {
 		proxywasm.LogCriticalf("error reading vm configuration: %v", err)
 	}
@@ -44,9 +35,20 @@ func (ctx context) OnVMStart(vmConfigurationSize int) types.OnVMStartStatus {
 	return types.OnVMStartStatusOK
 }
 
-// Override DefaultRootContext.
-func (ctx context) OnPluginStart(pluginConfigurationSize int) types.OnPluginStartStatus {
-	data, err := proxywasm.GetPluginConfiguration(pluginConfigurationSize)
+// Implement types.VMContext.
+func (*vmContext) NewPluginContext(uint32) types.PluginContext {
+	return &pluginContext{}
+}
+
+type pluginContext struct {
+	// Embed the default plugin context here,
+	// so that we don't need to reimplement all the methods.
+	types.DefaultPluginContext
+}
+
+// Override types.DefaultPluginContext.
+func (ctx pluginContext) OnPluginStart(pluginConfigurationSize int) types.OnPluginStartStatus {
+	data, err := proxywasm.GetPluginConfiguration()
 	if err != nil {
 		proxywasm.LogCriticalf("error reading plugin configuration: %v", err)
 	}

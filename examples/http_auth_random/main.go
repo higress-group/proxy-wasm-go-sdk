@@ -17,37 +17,46 @@ package main
 import (
 	"hash/fnv"
 
-	"github.com/tetratelabs/proxy-wasm-go-sdk/proxywasm"
-	"github.com/tetratelabs/proxy-wasm-go-sdk/proxywasm/types"
+	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm"
+	"github.com/higress-group/proxy-wasm-go-sdk/proxywasm/types"
 )
 
 const clusterName = "httpbin"
 
 func main() {
-	proxywasm.SetNewRootContext(newRootContext)
+	proxywasm.SetVMContext(&vmContext{})
 }
 
-type rootContext struct {
-	// You'd better embed the default context
-	// so that you don't need to reimplement all the methods by yourself.
-	proxywasm.DefaultRootContext
+type vmContext struct {
+	// Embed the default VM context here,
+	// so that we don't need to reimplement all the methods.
+	types.DefaultVMContext
 }
 
-func newRootContext(uint32) proxywasm.RootContext { return &rootContext{} }
+// Override types.DefaultVMContext.
+func (*vmContext) NewPluginContext(contextID uint32) types.PluginContext {
+	return &pluginContext{}
+}
 
-// Override DefaultRootContext.
-func (*rootContext) NewHttpContext(contextID uint32) proxywasm.HttpContext {
+type pluginContext struct {
+	// Embed the default plugin context here,
+	// so that we don't need to reimplement all the methods.
+	types.DefaultPluginContext
+}
+
+// Override types.DefaultPluginContext.
+func (*pluginContext) NewHttpContext(contextID uint32) types.HttpContext {
 	return &httpAuthRandom{contextID: contextID}
 }
 
 type httpAuthRandom struct {
-	// You'd better embed the default context
-	// so that you don't need to reimplement all the methods by yourself.
-	proxywasm.DefaultHttpContext
+	// Embed the default http context here,
+	// so that we don't need to reimplement all the methods.
+	types.DefaultHttpContext
 	contextID uint32
 }
 
-// Override DefaultHttpContext.
+// Override types.DefaultHttpContext.
 func (ctx *httpAuthRandom) OnHttpRequestHeaders(numHeaders int, endOfStream bool) types.Action {
 	hs, err := proxywasm.GetHttpRequestHeaders()
 	if err != nil {
@@ -58,7 +67,7 @@ func (ctx *httpAuthRandom) OnHttpRequestHeaders(numHeaders int, endOfStream bool
 		proxywasm.LogInfof("request header: %s: %s", h[0], h[1])
 	}
 
-	if _, err := proxywasm.DispatchHttpCall(clusterName, hs, "", nil,
+	if _, err := proxywasm.DispatchHttpCall(clusterName, hs, nil, nil,
 		50000, httpCallResponseCallback); err != nil {
 		proxywasm.LogCriticalf("dipatch httpcall failed: %v", err)
 		return types.ActionContinue
@@ -101,9 +110,9 @@ func httpCallResponseCallback(numHeaders, bodySize, numTrailers int) {
 
 	body := "access forbidden"
 	proxywasm.LogInfo(body)
-	if err := proxywasm.SendHttpResponse(403, types.Headers{
+	if err := proxywasm.SendHttpResponse(403, [][2]string{
 		{"powered-by", "proxy-wasm-go-sdk!!"},
-	}, []byte(body)); err != nil {
+	}, []byte(body), -1); err != nil {
 		proxywasm.LogErrorf("failed to send local response: %v", err)
 		proxywasm.ResumeHttpRequest()
 	}
