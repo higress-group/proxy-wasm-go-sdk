@@ -173,6 +173,49 @@ func DispatchHttpCall(
 	}
 }
 
+// InjectEncodedDataToFilterChain is used to inject encoded data to filter chain on response body phase
+func InjectEncodedDataToFilterChain(body []byte, endStream bool) error {
+	var bodyPtr *byte
+	if len(body) > 0 {
+		bodyPtr = &body[0]
+	}
+	switch st := internal.ProxyInjectEncodedDataToFilterChain(bodyPtr, len(body), endStream); st {
+	case internal.StatusOK:
+		return nil
+	default:
+		return fmt.Errorf("error occured when inject encoded data to filter chain")
+	}
+}
+
+// GetUpstreamMetrics is used to get upstream cluster metrics, which format is [][2]string, such as {{"127.0.0.1:6000", "...prometheus metrics..."}}
+func GetUpstreamMetrics() ([][2]string, error) {
+	var rvs int
+	var raw *byte
+
+	st := internal.ProxyGetUpstreamMetrics(&raw, &rvs)
+	if st != internal.StatusOK {
+		return nil, internal.StatusToError(st)
+	} else if raw == nil {
+		return nil, types.ErrorStatusNotFound
+	}
+
+	bs := internal.RawBytePtrToByteSlice(raw, rvs)
+	return internal.DeserializeMap(bs), nil
+}
+
+func OverrideUpstreamHost(address []byte) error {
+	var addressPtr *byte
+	if len(address) > 0 {
+		addressPtr = &address[0]
+	}
+	switch st := internal.ProxyOverrideUpstreamHost(addressPtr, len(address)); st {
+	case internal.StatusOK:
+		return nil
+	default:
+		return fmt.Errorf("error occured when override upstream host")
+	}
+}
+
 // GetHttpCallResponseHeaders is used for retrieving HTTP response headers
 // returned by a remote cluster in response to the DispatchHttpCall.
 // Only available during "callback" function passed to the DispatchHttpCall.

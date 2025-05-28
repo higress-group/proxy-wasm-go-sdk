@@ -76,6 +76,15 @@ func ProxyHttpCall(upstreamData *byte, upstreamSize int, headerData *byte, heade
 	bodyData *byte, bodySize int, trailersData *byte, trailersSize int, timeout uint32, calloutIDPtr *uint32,
 ) Status
 
+//export proxy_inject_encoded_data_to_filter_chain
+func ProxyInjectEncodedDataToFilterChain(bodyData *byte, bodySize int, endStream bool) Status
+
+//export proxy_get_upstream_metrics
+func ProxyGetUpstreamMetrics(returnValueData **byte, returnValueSize *int) Status
+
+//export proxy_override_upstream_host
+func ProxyOverrideUpstreamHost(bodyData *byte, bodySize int) Status
+
 //export proxy_redis_init
 func ProxyRedisInit(upstreamData *byte, upstreamSize int, usernameData *byte, usernameSize int,
 	passwordData *byte, passwordSize int, timeout uint32,
