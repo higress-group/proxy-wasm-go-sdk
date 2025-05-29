@@ -58,8 +58,8 @@ type ProxyWasmHost interface {
 	ProxySetBufferBytes(bufferType BufferType, start int, maxSize int, bufferData *byte, bufferSize int) Status
 	ProxyHttpCall(upstreamData *byte, upstreamSize int, headerData *byte, headerSize int, bodyData *byte, bodySize int, trailersData *byte, trailersSize int, timeout uint32, calloutIDPtr *uint32) Status
 	ProxyInjectEncodedDataToFilterChain(bodyData *byte, bodySize int, endStream bool) Status
-	ProxyGetUpstreamMetrics(returnValueData **byte, returnValueSize *int) Status
-	ProxyOverrideUpstreamHost(bodyData *byte, bodySize int) Status
+	ProxyGetUpstreamHosts(returnValueData **byte, returnValueSize *int) Status
+	ProxySetUpstreamOverrideHost(bodyData *byte, bodySize int) Status
 	ProxyRedisInit(upstreamData *byte, upstreamSize int, usernameData *byte, usernameSize int, passwordData *byte, passwordSize int, timeout uint32) Status
 	ProxyRedisCall(upstreamData *byte, upstreamSize int, queryData *byte, querySize int, calloutIDPtr *uint32) Status
 	ProxyCallForeignFunction(funcNamePtr *byte, funcNameSize int, paramPtr *byte, paramSize int, returnData **byte, returnSize *int) Status
@@ -161,10 +161,10 @@ func (d DefaultProxyWAMSHost) ProxyGetMetric(metricID uint32, returnMetricValue 
 func (d DefaultProxyWAMSHost) ProxyInjectEncodedDataToFilterChain(bodyData *byte, bodySize int, endStream bool) Status {
 	return 0
 }
-func (d DefaultProxyWAMSHost) ProxyGetUpstreamMetrics(returnValueData **byte, returnValueSize *int) Status {
+func (d DefaultProxyWAMSHost) ProxyGetUpstreamHosts(returnValueData **byte, returnValueSize *int) Status {
 	return 0
 }
-func (d DefaultProxyWAMSHost) ProxyOverrideUpstreamHost(bodyData *byte, bodySize int) Status {
+func (d DefaultProxyWAMSHost) ProxySetUpstreamOverrideHost(bodyData *byte, bodySize int) Status {
 	return 0
 }
 
@@ -259,12 +259,12 @@ func ProxyInjectEncodedDataToFilterChain(bodyData *byte, bodySize int, endStream
 	return currentHost.ProxyInjectEncodedDataToFilterChain(bodyData, bodySize, endStream)
 }
 
-func ProxyGetUpstreamMetrics(returnValueData **byte, returnValueSize *int) Status {
-	return currentHost.ProxyGetUpstreamMetrics(returnValueData, returnValueSize)
+func ProxyGetUpstreamHosts(returnValueData **byte, returnValueSize *int) Status {
+	return currentHost.ProxyGetUpstreamHosts(returnValueData, returnValueSize)
 }
 
-func ProxyOverrideUpstreamHost(bodyData *byte, bodySize int) Status {
-	return currentHost.ProxyOverrideUpstreamHost(bodyData, bodySize)
+func ProxySetUpstreamOverrideHost(bodyData *byte, bodySize int) Status {
+	return currentHost.ProxySetUpstreamOverrideHost(bodyData, bodySize)
 }
 
 func ProxyRedisInit(upstreamData *byte, upstreamSize int, usernameData *byte, usernameSize int,

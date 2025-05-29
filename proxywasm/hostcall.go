@@ -187,12 +187,14 @@ func InjectEncodedDataToFilterChain(body []byte, endStream bool) error {
 	}
 }
 
-// GetUpstreamMetrics is used to get upstream cluster metrics, which format is [][2]string, such as {{"127.0.0.1:6000", "...prometheus metrics..."}}
-func GetUpstreamMetrics() ([][2]string, error) {
+// GetUpstreamHosts is used to get upstream cluster host address and metrics, the result format is [][2]string
+// For hosts with metrics, result example: {{"127.0.0.1:6000", "...prometheus metrics..."}}
+// For hosts without metrics, result example: {{"127.0.0.1:6000", ""}}
+func GetUpstreamHosts() ([][2]string, error) {
 	var rvs int
 	var raw *byte
 
-	st := internal.ProxyGetUpstreamMetrics(&raw, &rvs)
+	st := internal.ProxyGetUpstreamHosts(&raw, &rvs)
 	if st != internal.StatusOK {
 		return nil, internal.StatusToError(st)
 	} else if raw == nil {
@@ -203,12 +205,12 @@ func GetUpstreamMetrics() ([][2]string, error) {
 	return internal.DeserializeMap(bs), nil
 }
 
-func OverrideUpstreamHost(address []byte) error {
+func SetUpstreamOverrideHost(address []byte) error {
 	var addressPtr *byte
 	if len(address) > 0 {
 		addressPtr = &address[0]
 	}
-	switch st := internal.ProxyOverrideUpstreamHost(addressPtr, len(address)); st {
+	switch st := internal.ProxySetUpstreamOverrideHost(addressPtr, len(address)); st {
 	case internal.StatusOK:
 		return nil
 	default:

@@ -79,11 +79,11 @@ func ProxyHttpCall(upstreamData *byte, upstreamSize int, headerData *byte, heade
 //export proxy_inject_encoded_data_to_filter_chain
 func ProxyInjectEncodedDataToFilterChain(bodyData *byte, bodySize int, endStream bool) Status
 
-//export proxy_get_upstream_metrics
-func ProxyGetUpstreamMetrics(returnValueData **byte, returnValueSize *int) Status
+//export proxy_get_upstream_hosts
+func ProxyGetUpstreamHosts(returnValueData **byte, returnValueSize *int) Status
 
-//export proxy_override_upstream_host
-func ProxyOverrideUpstreamHost(bodyData *byte, bodySize int) Status
+//export set_upstream_override_host
+func ProxySetUpstreamOverrideHost(bodyData *byte, bodySize int) Status
 
 //export proxy_redis_init
 func ProxyRedisInit(upstreamData *byte, upstreamSize int, usernameData *byte, usernameSize int,
