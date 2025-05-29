@@ -82,7 +82,7 @@ func ProxyInjectEncodedDataToFilterChain(bodyData *byte, bodySize int, endStream
 //export proxy_get_upstream_hosts
 func ProxyGetUpstreamHosts(returnValueData **byte, returnValueSize *int) Status
 
-//export set_upstream_override_host
+//export proxy_set_upstream_override_host
 func ProxySetUpstreamOverrideHost(bodyData *byte, bodySize int) Status
 
 //export proxy_redis_init

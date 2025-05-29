@@ -205,6 +205,7 @@ func GetUpstreamHosts() ([][2]string, error) {
 	return internal.DeserializeMap(bs), nil
 }
 
+// SetUpstreamOverrideHost is used to set target endpoint
 func SetUpstreamOverrideHost(address []byte) error {
 	var addressPtr *byte
 	if len(address) > 0 {
