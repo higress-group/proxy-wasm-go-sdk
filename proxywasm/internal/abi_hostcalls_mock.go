@@ -52,6 +52,7 @@ type ProxyWasmHost interface {
 	ProxyReplaceHeaderMapValue(mapType MapType, keyData *byte, keySize int32, valueData *byte, valueSize int32) Status
 	ProxyContinueStream(streamType StreamType) Status
 	ProxyCloseStream(streamType StreamType) Status
+<<<<<<< Updated upstream
 
 	ProxyRemoveHeaderMapValue(mapType MapType, keyData *byte, keySize int32) Status
 	ProxyGetHeaderMapPairs(mapType MapType, returnValueData unsafe.Pointer, returnValueSize *int32) Status
@@ -62,6 +63,20 @@ type ProxyWasmHost interface {
 	ProxyCallForeignFunction(funcNamePtr *byte, funcNameSize int32, paramPtr *byte, paramSize int32, returnData unsafe.Pointer, returnSize *int32) Status
 	ProxyRedisInit(upstreamData *byte, upstreamSize int32, usernameData *byte, usernameSize int32, passwordData *byte, passwordSize int32, timeout uint32) Status
 	ProxyRedisCall(upstreamData *byte, upstreamSize int32, queryData *byte, querySize int32, calloutIDPtr *uint32) Status
+=======
+	ProxyRemoveHeaderMapValue(mapType MapType, keyData *byte, keySize int) Status
+	ProxyGetHeaderMapPairs(mapType MapType, returnValueData **byte, returnValueSize *int) Status
+	ProxySetHeaderMapPairs(mapType MapType, mapData *byte, mapSize int) Status
+	ProxyGetBufferBytes(bufferType BufferType, start int, maxSize int, returnBufferData **byte, returnBufferSize *int) Status
+	ProxySetBufferBytes(bufferType BufferType, start int, maxSize int, bufferData *byte, bufferSize int) Status
+	ProxyHttpCall(upstreamData *byte, upstreamSize int, headerData *byte, headerSize int, bodyData *byte, bodySize int, trailersData *byte, trailersSize int, timeout uint32, calloutIDPtr *uint32) Status
+	ProxyInjectEncodedDataToFilterChain(bodyData *byte, bodySize int, endStream bool) Status
+	ProxyGetUpstreamHosts(returnValueData **byte, returnValueSize *int) Status
+	ProxySetUpstreamOverrideHost(bodyData *byte, bodySize int) Status
+	ProxyRedisInit(upstreamData *byte, upstreamSize int, usernameData *byte, usernameSize int, passwordData *byte, passwordSize int, timeout uint32) Status
+	ProxyRedisCall(upstreamData *byte, upstreamSize int, queryData *byte, querySize int, calloutIDPtr *uint32) Status
+	ProxyCallForeignFunction(funcNamePtr *byte, funcNameSize int, paramPtr *byte, paramSize int, returnData **byte, returnSize *int) Status
+>>>>>>> Stashed changes
 	ProxySetTickPeriodMilliseconds(period uint32) Status
 	ProxySetEffectiveContext(contextID uint32) Status
 	ProxyDone() Status
@@ -157,7 +172,21 @@ func (d DefaultProxyWAMSHost) ProxyGetMetric(metricID uint32, returnMetricValue 
 	return 0
 }
 
+<<<<<<< Updated upstream
 func ProxyLog(logLevel LogLevel, messageData *byte, messageSize int32) Status {
+=======
+func (d DefaultProxyWAMSHost) ProxyInjectEncodedDataToFilterChain(bodyData *byte, bodySize int, endStream bool) Status {
+	return 0
+}
+func (d DefaultProxyWAMSHost) ProxyGetUpstreamHosts(returnValueData **byte, returnValueSize *int) Status {
+	return 0
+}
+func (d DefaultProxyWAMSHost) ProxySetUpstreamOverrideHost(bodyData *byte, bodySize int) Status {
+	return 0
+}
+
+func ProxyLog(logLevel LogLevel, messageData *byte, messageSize int) Status {
+>>>>>>> Stashed changes
 	return currentHost.ProxyLog(logLevel, messageData, messageSize)
 }
 
@@ -246,6 +275,18 @@ func ProxyHttpCall(upstreamData *byte, upstreamSize int32, headerData *byte, hea
 
 func ProxyCallForeignFunction(funcNamePtr *byte, funcNameSize int32, paramPtr *byte, paramSize int32, returnData unsafe.Pointer, returnSize *int32) Status {
 	return currentHost.ProxyCallForeignFunction(funcNamePtr, funcNameSize, paramPtr, paramSize, returnData, returnSize)
+}
+
+func ProxyInjectEncodedDataToFilterChain(bodyData *byte, bodySize int, endStream bool) Status {
+	return currentHost.ProxyInjectEncodedDataToFilterChain(bodyData, bodySize, endStream)
+}
+
+func ProxyGetUpstreamHosts(returnValueData **byte, returnValueSize *int) Status {
+	return currentHost.ProxyGetUpstreamHosts(returnValueData, returnValueSize)
+}
+
+func ProxySetUpstreamOverrideHost(bodyData *byte, bodySize int) Status {
+	return currentHost.ProxySetUpstreamOverrideHost(bodyData, bodySize)
 }
 
 func ProxyRedisInit(upstreamData *byte, upstreamSize int32, usernameData *byte, usernameSize int32,
