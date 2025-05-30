@@ -277,15 +277,15 @@ func ProxyCallForeignFunction(funcNamePtr *byte, funcNameSize int32, paramPtr *b
 	return currentHost.ProxyCallForeignFunction(funcNamePtr, funcNameSize, paramPtr, paramSize, returnData, returnSize)
 }
 
-func ProxyInjectEncodedDataToFilterChain(bodyData *byte, bodySize int, endStream bool) Status {
+func ProxyInjectEncodedDataToFilterChain(bodyData *byte, bodySize int32, endStream bool) Status {
 	return currentHost.ProxyInjectEncodedDataToFilterChain(bodyData, bodySize, endStream)
 }
 
-func ProxyGetUpstreamHosts(returnValueData **byte, returnValueSize *int) Status {
+func ProxyGetUpstreamHosts(returnValueData **byte, returnValueSize *int32) Status {
 	return currentHost.ProxyGetUpstreamHosts(returnValueData, returnValueSize)
 }
 
-func ProxySetUpstreamOverrideHost(bodyData *byte, bodySize int) Status {
+func ProxySetUpstreamOverrideHost(bodyData *byte, bodySize int32) Status {
 	return currentHost.ProxySetUpstreamOverrideHost(bodyData, bodySize)
 }
 

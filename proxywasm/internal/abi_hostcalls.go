@@ -82,13 +82,13 @@ func ProxyHttpCall(upstreamData *byte, upstreamSize int32, headerData *byte, hea
 func ProxyCallForeignFunction(funcNamePtr *byte, funcNameSize int32, paramPtr *byte, paramSize int32, returnData unsafe.Pointer, returnSize *int32) Status
 
 //go:wasmimport env proxy_inject_encoded_data_to_filter_chain
-func ProxyInjectEncodedDataToFilterChain(bodyData *byte, bodySize int, endStream bool) Status
+func ProxyInjectEncodedDataToFilterChain(bodyData *byte, bodySize int32, endStream bool) Status
 
 //go:wasmimport env proxy_get_upstream_hosts
-func ProxyGetUpstreamHosts(returnValueData **byte, returnValueSize *int) Status
+func ProxyGetUpstreamHosts(returnValueData **byte, returnValueSize *int32) Status
 
 //go:wasmimport env proxy_set_upstream_override_host
-func ProxySetUpstreamOverrideHost(bodyData *byte, bodySize int) Status
+func ProxySetUpstreamOverrideHost(bodyData *byte, bodySize int32) Status
 
 //go:wasmimport env proxy_redis_init
 func ProxyRedisInit(upstreamData *byte, upstreamSize int32, usernameData *byte, usernameSize int32,
