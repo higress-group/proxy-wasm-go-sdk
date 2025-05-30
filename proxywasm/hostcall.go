@@ -173,7 +173,7 @@ func InjectEncodedDataToFilterChain(body []byte, endStream bool) error {
 	if len(body) > 0 {
 		bodyPtr = &body[0]
 	}
-	switch st := internal.ProxyInjectEncodedDataToFilterChain(bodyPtr, len(body), endStream); st {
+	switch st := internal.ProxyInjectEncodedDataToFilterChain(bodyPtr, int32(len(body)), endStream); st {
 	case internal.StatusOK:
 		return nil
 	default:
@@ -185,17 +185,17 @@ func InjectEncodedDataToFilterChain(body []byte, endStream bool) error {
 // For hosts with metrics, result example: {{"127.0.0.1:6000", "...prometheus metrics..."}}
 // For hosts without metrics, result example: {{"127.0.0.1:6000", ""}}
 func GetUpstreamHosts() ([][2]string, error) {
-	var rvs int
+	var rvs int32
 	var raw *byte
 
-	st := internal.ProxyGetUpstreamHosts(&raw, &rvs)
+	st := internal.ProxyGetUpstreamHosts(unsafe.Pointer(&raw), &rvs)
 	if st != internal.StatusOK {
 		return nil, internal.StatusToError(st)
 	} else if raw == nil {
 		return nil, types.ErrorStatusNotFound
 	}
 
-	bs := internal.RawBytePtrToByteSlice(raw, rvs)
+	bs := unsafe.Slice(raw, rvs)
 	return internal.DeserializeMap(bs), nil
 }
 
@@ -205,7 +205,7 @@ func SetUpstreamOverrideHost(address []byte) error {
 	if len(address) > 0 {
 		addressPtr = &address[0]
 	}
-	switch st := internal.ProxySetUpstreamOverrideHost(addressPtr, len(address)); st {
+	switch st := internal.ProxySetUpstreamOverrideHost(addressPtr, int32(len(address))); st {
 	case internal.StatusOK:
 		return nil
 	default:
