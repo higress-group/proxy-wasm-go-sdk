@@ -281,7 +281,7 @@ func ProxyInjectEncodedDataToFilterChain(bodyData *byte, bodySize int32, endStre
 	return currentHost.ProxyInjectEncodedDataToFilterChain(bodyData, bodySize, endStream)
 }
 
-func ProxyGetUpstreamHosts(returnValueData **byte, returnValueSize *int32) Status {
+func ProxyGetUpstreamHosts(returnValueData unsafe.Pointer, returnValueSize *int32) Status {
 	return currentHost.ProxyGetUpstreamHosts(returnValueData, returnValueSize)
 }
 

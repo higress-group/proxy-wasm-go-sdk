@@ -85,7 +85,7 @@ func ProxyCallForeignFunction(funcNamePtr *byte, funcNameSize int32, paramPtr *b
 func ProxyInjectEncodedDataToFilterChain(bodyData *byte, bodySize int32, endStream bool) Status
 
 //go:wasmimport env proxy_get_upstream_hosts
-func ProxyGetUpstreamHosts(returnValueData **byte, returnValueSize *int32) Status
+func ProxyGetUpstreamHosts(returnValueData unsafe.Pointer, returnValueSize *int32) Status
 
 //go:wasmimport env proxy_set_upstream_override_host
 func ProxySetUpstreamOverrideHost(bodyData *byte, bodySize int32) Status
