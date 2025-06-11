@@ -167,6 +167,52 @@ func DispatchHttpCall(
 	}
 }
 
+// InjectEncodedDataToFilterChain is used to inject encoded data to filter chain on response body phase
+func InjectEncodedDataToFilterChain(body []byte, endStream bool) error {
+	var bodyPtr *byte
+	if len(body) > 0 {
+		bodyPtr = &body[0]
+	}
+	switch st := internal.ProxyInjectEncodedDataToFilterChain(bodyPtr, int32(len(body)), endStream); st {
+	case internal.StatusOK:
+		return nil
+	default:
+		return fmt.Errorf("error occured when inject encoded data to filter chain")
+	}
+}
+
+// GetUpstreamHosts is used to get upstream cluster host address and metrics, the result format is [][2]string
+// For hosts with metrics, result example: {{"127.0.0.1:6000", "...prometheus metrics..."}}
+// For hosts without metrics, result example: {{"127.0.0.1:6000", ""}}
+func GetUpstreamHosts() ([][2]string, error) {
+	var rvs int32
+	var raw *byte
+
+	st := internal.ProxyGetUpstreamHosts(unsafe.Pointer(&raw), &rvs)
+	if st != internal.StatusOK {
+		return nil, internal.StatusToError(st)
+	} else if raw == nil {
+		return nil, types.ErrorStatusNotFound
+	}
+
+	bs := unsafe.Slice(raw, rvs)
+	return internal.DeserializeMap(bs), nil
+}
+
+// SetUpstreamOverrideHost is used to set target endpoint
+func SetUpstreamOverrideHost(address []byte) error {
+	var addressPtr *byte
+	if len(address) > 0 {
+		addressPtr = &address[0]
+	}
+	switch st := internal.ProxySetUpstreamOverrideHost(addressPtr, int32(len(address))); st {
+	case internal.StatusOK:
+		return nil
+	default:
+		return fmt.Errorf("error occured when override upstream host")
+	}
+}
+
 // GetHttpCallResponseHeaders is used for retrieving HTTP response headers
 // returned by a remote cluster in response to the DispatchHttpCall.
 // Only available during "callback" function passed to the DispatchHttpCall.
