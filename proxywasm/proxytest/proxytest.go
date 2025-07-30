@@ -317,3 +317,33 @@ func (h *hostEmulator) ProxyDone() internal.Status {
 	log.Printf("ProxyDone not implemented in the host emulator yet")
 	return 0
 }
+
+// impl internal.ProxyWasmHost
+func (h *hostEmulator) ProxyGetUpstreamHosts(returnValueData unsafe.Pointer, returnValueSize *int32) internal.Status {
+	log.Printf("ProxyGetUpstreamHosts not implemented in the host emulator yet")
+	return 0
+}
+
+// impl internal.ProxyWasmHost
+func (h *hostEmulator) ProxyInjectEncodedDataToFilterChain(bodyData *byte, bodySize int32, endStream bool) internal.Status {
+	log.Printf("ProxyInjectEncodedDataToFilterChain not implemented in the host emulator yet")
+	return 0
+}
+
+// impl internal.ProxyWasmHost
+func (h *hostEmulator) ProxyRedisCall(upstreamData *byte, upstreamSize int32, queryData *byte, querySize int32, calloutIDPtr *uint32) internal.Status {
+	log.Printf("ProxyRedisCall not implemented in the host emulator yet")
+	return 0
+}
+
+// impl internal.ProxyWasmHost
+func (h *hostEmulator) ProxyRedisInit(upstreamData *byte, upstreamSize int32, usernameData *byte, usernameSize int32, passwordData *byte, passwordSize int32, timeout uint32) internal.Status {
+	log.Printf("ProxyRedisInit not implemented in the host emulator yet")
+	return 0
+}
+
+// impl internal.ProxyWasmHost
+func (h *hostEmulator) ProxySetUpstreamOverrideHost(bodyData *byte, bodySize int32) internal.Status {
+	log.Printf("ProxySetUpstreamOverrideHost not implemented in the host emulator yet")
+	return 0
+}
