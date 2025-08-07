@@ -28,6 +28,16 @@ func SetVMContext(ctx types.VMContext) {
 	internal.SetVMContext(ctx)
 }
 
+// GetVMContext is used to get VMContext in wasm-go unit test framework
+func GetVMContext() types.VMContext {
+	return internal.GetVMContext()
+}
+
+// GetHttpContext is used to get HttpContext in wasm-go unit test framework
+func GetHttpContext(contextID uint32) types.HttpContext {
+	return internal.GetHttpContext(contextID)
+}
+
 // SetPluginContext is one possible entrypoint for setting up the Wasm VM.
 //
 // Subsequent calls to any entrypoint overwrite previous calls to any

@@ -57,6 +57,16 @@ func SetVMContext(vmContext types.VMContext) {
 	currentState.vmContext = vmContext
 }
 
+// GetVMContext is used to get VMContext in wasm-go unit test framework
+func GetVMContext() types.VMContext {
+	return currentState.vmContext
+}
+
+// GetHttpContext is used to get HttpContext in wasm-go unit test framework
+func GetHttpContext(contextID uint32) types.HttpContext {
+	return currentState.httpContexts[contextID]
+}
+
 func RegisterHttpCallout(calloutID uint32, callback func(numHeaders, bodySize, numTrailers int)) {
 	currentState.registerHttpCallOut(calloutID, callback)
 }

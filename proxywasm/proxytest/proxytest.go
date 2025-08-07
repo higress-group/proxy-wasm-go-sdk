@@ -131,6 +131,8 @@ type HostEmulator interface {
 	GetProperty(path []string) ([]byte, error)
 	// SetProperty sets property data on the host, for a given path.
 	SetProperty(path []string, data []byte) error
+	// SetHttpRequestHeader sets the request header for the HTTP stream with ID contextID in the host.
+	SetHttpRequestHeaders(contextID uint32, headers [][2]string)
 }
 
 const (

@@ -544,3 +544,12 @@ func (h *httpHostEmulator) SetProperty(path []string, data []byte) error {
 		&raw[0], int32(len(raw)), &data[0], int32(len(data)),
 	))
 }
+
+// impl HostEmulator
+func (h *httpHostEmulator) SetHttpRequestHeaders(contextID uint32, headers [][2]string) {
+	cs, ok := h.httpStreams[contextID]
+	if !ok {
+		log.Fatalf("invalid context id: %d", contextID)
+	}
+	cs.requestHeaders = cloneWithLowerCaseMapKeys(headers)
+}
