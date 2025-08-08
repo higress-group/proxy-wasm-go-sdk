@@ -524,7 +524,22 @@ func (r *rootHostEmulator) CallOnHttpCallResponse(calloutID uint32, headers, tra
 	defer func() {
 		r.activeCalloutID = 0
 		delete(r.httpCalloutResponse, calloutID)
-		delete(r.httpCalloutIDToContextID, calloutID)
+
+		// Clean up contextID to callout mapping
+		if contextID, exists := r.httpCalloutIDToContextID[calloutID]; exists {
+			delete(r.httpCalloutIDToContextID, calloutID)
+
+			// Remove the corresponding entry from contextID's callout list
+			if callouts, exists := r.httpContextIDToCalloutInfos[contextID]; exists {
+				for i, callout := range callouts {
+					if callout.CalloutID == calloutID {
+						// Remove the i-th element
+						r.httpContextIDToCalloutInfos[contextID] = append(callouts[:i], callouts[i+1:]...)
+						break
+					}
+				}
+			}
+		}
 	}()
 	internal.ProxyOnHttpCallResponse(PluginContextID, calloutID, int32(len(headers)), int32(len(body)), int32(len(trailers)))
 }
@@ -541,7 +556,22 @@ func (r *rootHostEmulator) CallOnRedisCallResponse(calloutID uint32, status int3
 	defer func() {
 		r.activeCalloutID = 0
 		delete(r.redisCalloutResponse, calloutID)
-		delete(r.redisCalloutIDToContextID, calloutID)
+
+		// Clean up contextID to callout mapping
+		if contextID, exists := r.redisCalloutIDToContextID[calloutID]; exists {
+			delete(r.redisCalloutIDToContextID, calloutID)
+
+			// Remove the corresponding entry from contextID's callout list
+			if callouts, exists := r.redisContextIDToCalloutInfos[contextID]; exists {
+				for i, callout := range callouts {
+					if callout.CalloutID == calloutID {
+						// Remove the i-th element
+						r.redisContextIDToCalloutInfos[contextID] = append(callouts[:i], callouts[i+1:]...)
+						break
+					}
+				}
+			}
+		}
 	}()
 	internal.ProxyOnRedisCallResponse(PluginContextID, calloutID, status, int32(len(response)))
 }
