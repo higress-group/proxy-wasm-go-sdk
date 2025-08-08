@@ -224,7 +224,7 @@ func getNextContextID() (ret uint32) {
 func (h *hostEmulator) ProxyGetBufferBytes(bt internal.BufferType, start int32, maxSize int32,
 	returnBufferData unsafe.Pointer, returnBufferSize *int32) internal.Status {
 	switch bt {
-	case internal.BufferTypePluginConfiguration, internal.BufferTypeVMConfiguration, internal.BufferTypeHttpCallResponseBody:
+	case internal.BufferTypePluginConfiguration, internal.BufferTypeVMConfiguration, internal.BufferTypeHttpCallResponseBody, internal.BufferTypeRedisCallResponse:
 		return h.rootHostEmulatorProxyGetBufferBytes(bt, start, maxSize, returnBufferData, returnBufferSize)
 	case internal.BufferTypeDownstreamData, internal.BufferTypeUpstreamData:
 		return h.networkHostEmulatorProxyGetBufferBytes(bt, start, maxSize, returnBufferData, returnBufferSize)
