@@ -43,6 +43,13 @@ type (
 			body     []byte
 		}
 
+		redisContextIDToCalloutInfos map[uint32][]RedisCalloutAttribute // key: contextID
+		redisCalloutIDToContextID    map[uint32]uint32                  // key: calloutID
+		redisCalloutResponse         map[uint32]struct {                // key: calloutID
+			status   int32
+			response []byte
+		}
+
 		metricIDToType  map[uint32]internal.MetricType
 		metricNameToID  map[string]uint32
 		metricIDToValue map[uint32]uint64
@@ -56,6 +63,12 @@ type (
 		Headers   [][2]string
 		Trailers  [][2]string
 		Body      []byte
+	}
+
+	RedisCalloutAttribute struct {
+		CalloutID uint32
+		Upstream  string
+		Query     []byte
 	}
 
 	sharedData struct {
@@ -79,6 +92,13 @@ func newRootHostEmulator(pluginConfiguration, vmConfiguration []byte) *rootHostE
 			headers  [][2]string
 			trailers [][2]string
 			body     []byte
+		}{},
+
+		redisContextIDToCalloutInfos: map[uint32][]RedisCalloutAttribute{},
+		redisCalloutIDToContextID:    map[uint32]uint32{},
+		redisCalloutResponse: map[uint32]struct {
+			status   int32
+			response []byte
 		}{},
 
 		pluginConfiguration: pluginConfiguration,
@@ -269,6 +289,38 @@ func (r *rootHostEmulator) ProxyHttpCall(upstreamData *byte, upstreamSize int32,
 }
 
 // impl internal.ProxyWasmHost
+func (r *rootHostEmulator) ProxyRedisCall(upstreamData *byte, upstreamSize int32, queryData *byte, querySize int32, calloutIDPtr *uint32) internal.Status {
+	upstream := unsafe.String(upstreamData, upstreamSize)
+	query := unsafe.Slice(queryData, querySize)
+
+	log.Printf("[redis callout to %s] query: %v", upstream, query)
+
+	calloutID := uint32(len(r.redisCalloutIDToContextID))
+	contextID := internal.VMStateGetActiveContextID()
+	r.redisCalloutIDToContextID[calloutID] = contextID
+	r.redisContextIDToCalloutInfos[contextID] = append(r.redisContextIDToCalloutInfos[contextID], RedisCalloutAttribute{
+		CalloutID: calloutID,
+		Upstream:  upstream,
+		Query:     query,
+	})
+
+	*calloutIDPtr = calloutID
+	return internal.StatusOK
+}
+
+// impl internal.ProxyWasmHost
+func (r *rootHostEmulator) ProxyRedisInit(upstreamData *byte, upstreamSize int32, usernameData *byte, usernameSize int32, passwordData *byte, passwordSize int32, timeout uint32) internal.Status {
+	upstream := unsafe.String(upstreamData, upstreamSize)
+	username := unsafe.String(usernameData, usernameSize)
+	password := unsafe.String(passwordData, passwordSize)
+
+	log.Printf("[redis init] upstream: %s, username: %s, timeout: %d", upstream, username, timeout)
+	log.Printf("[redis init] password: %s", password)
+
+	return internal.StatusOK
+}
+
+// impl internal.ProxyWasmHost
 func (r *rootHostEmulator) RegisterForeignFunction(name string, f func([]byte) []byte) {
 	r.foreignFunctions[name] = f
 }
@@ -362,6 +414,12 @@ func (r *rootHostEmulator) rootHostEmulatorProxyGetBufferBytes(bt internal.Buffe
 			log.Fatalf("callout response unregistered for %d", activeID)
 		}
 		buf = res.body
+	case internal.BufferTypeRedisCallResponse:
+		res, ok := r.redisCalloutResponse[r.activeCalloutID]
+		if !ok {
+			log.Fatalf("redis callout response unregistered for %d", r.activeCalloutID)
+		}
+		buf = res.response
 	default:
 		panic("unreachable: maybe a bug in this host emulation or SDK")
 	}
@@ -439,6 +497,12 @@ func (r *rootHostEmulator) GetCalloutAttributesFromContext(contextID uint32) []H
 }
 
 // impl HostEmulator
+func (r *rootHostEmulator) GetRedisCalloutAttributesFromContext(contextID uint32) []RedisCalloutAttribute {
+	infos := r.redisContextIDToCalloutInfos[contextID]
+	return infos
+}
+
+// impl HostEmulator
 func (r *rootHostEmulator) StartVM() types.OnVMStartStatus {
 	return internal.ProxyOnVMStart(PluginContextID, int32(len(r.vmConfiguration)))
 }
@@ -463,6 +527,23 @@ func (r *rootHostEmulator) CallOnHttpCallResponse(calloutID uint32, headers, tra
 		delete(r.httpCalloutIDToContextID, calloutID)
 	}()
 	internal.ProxyOnHttpCallResponse(PluginContextID, calloutID, int32(len(headers)), int32(len(body)), int32(len(trailers)))
+}
+
+// impl HostEmulator
+func (r *rootHostEmulator) CallOnRedisCallResponse(calloutID uint32, status int32, response []byte) {
+	r.redisCalloutResponse[calloutID] = struct {
+		status   int32
+		response []byte
+	}{status: status, response: response}
+
+	// PluginContextID, calloutID uint32, status, responseSize in
+	r.activeCalloutID = calloutID
+	defer func() {
+		r.activeCalloutID = 0
+		delete(r.redisCalloutResponse, calloutID)
+		delete(r.redisCalloutIDToContextID, calloutID)
+	}()
+	internal.ProxyOnRedisCallResponse(PluginContextID, calloutID, status, int32(len(response)))
 }
 
 // impl HostEmulator

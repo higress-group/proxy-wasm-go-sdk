@@ -618,6 +618,40 @@ func exportHostABI(ctx context.Context, r wazero.Runtime) error {
 			return ret
 		}).
 		Export("proxy_http_call").
+		// proxy_redis_init initializes a Redis connection.
+		NewFunctionBuilder().
+		WithParameterNames("upstream_data", "upstream_size", "username_data", "username_size", "password_data", "password_size", "timeout").
+		WithResultNames("call_result").
+		WithFunc(func(ctx context.Context, mod api.Module, upstreamData, upstreamSize, usernameData, usernameSize, passwordData, passwordSize, timeout uint32) uint32 {
+			upstreamPtr := wasmBytePtr(mod, upstreamData, upstreamSize)
+			usernamePtr := wasmBytePtr(mod, usernameData, usernameSize)
+			passwordPtr := wasmBytePtr(mod, passwordData, passwordSize)
+			return uint32(internal.ProxyRedisInit(upstreamPtr, int32(upstreamSize), usernamePtr, int32(usernameSize), passwordPtr, int32(passwordSize), timeout))
+		}).
+		Export("proxy_redis_init").
+		// proxy_redis_call dispatches a Redis call to upstream.
+		NewFunctionBuilder().
+		WithParameterNames("upstream_data", "upstream_size", "query_data", "query_size", "return_callout_id").
+		WithResultNames("call_result").
+		WithFunc(func(ctx context.Context, mod api.Module, upstreamData, upstreamSize, queryData, querySize, calloutIDPtr uint32) uint32 {
+			upstreamPtr := wasmBytePtr(mod, upstreamData, upstreamSize)
+			queryPtr := wasmBytePtr(mod, queryData, querySize)
+			var calloutID uint32
+			ret := uint32(internal.ProxyRedisCall(upstreamPtr, int32(upstreamSize), queryPtr, int32(querySize), &calloutID))
+			handleMemoryStatus(mod.Memory().WriteUint32Le(calloutIDPtr, calloutID))
+
+			// Register Redis callback
+			internal.RegisterRedisCallout(calloutID, func(status, responseSize int) {
+				proxyOnRedisCallResponse := mod.ExportedFunction("proxy_on_redis_call_response")
+				_, err := proxyOnRedisCallResponse.Call(ctx, uint64(getPluginContextID(ctx)), uint64(calloutID), uint64(status), uint64(responseSize))
+				if err != nil {
+					panic(err)
+				}
+			})
+
+			return ret
+		}).
+		Export("proxy_redis_call").
 		// proxy_call_foreign_function calls a registered foreign function.
 		//
 		// See https://github.com/proxy-wasm/spec/tree/master/abi-versions/vNEXT#proxy_call_foreign_function

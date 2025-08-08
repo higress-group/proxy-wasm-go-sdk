@@ -40,6 +40,10 @@ type HostEmulator interface {
 	GetCalloutAttributesFromContext(contextID uint32) []HttpCalloutAttribute
 	// CallOnHttpCallResponse executes the callback for the HTTP call with ID calloutID in the plugin.
 	CallOnHttpCallResponse(calloutID uint32, headers [][2]string, trailers [][2]string, body []byte)
+	// GetRedisCalloutAttributesFromContext returns the current Redis callout attributes for the given context in the host.
+	GetRedisCalloutAttributesFromContext(contextID uint32) []RedisCalloutAttribute
+	// CallOnRedisCallResponse executes the callback for the Redis call with ID calloutID in the plugin.
+	CallOnRedisCallResponse(calloutID uint32, status int32, response []byte)
 	// GetCounterMetric returns the value for the counter in the host.
 	GetCounterMetric(name string) (uint64, error)
 	// GetGaugeMetric returns the value for the gauge in the host.
@@ -329,18 +333,6 @@ func (h *hostEmulator) ProxyGetUpstreamHosts(returnValueData unsafe.Pointer, ret
 // impl internal.ProxyWasmHost
 func (h *hostEmulator) ProxyInjectEncodedDataToFilterChain(bodyData *byte, bodySize int32, endStream bool) internal.Status {
 	log.Printf("ProxyInjectEncodedDataToFilterChain not implemented in the host emulator yet")
-	return 0
-}
-
-// impl internal.ProxyWasmHost
-func (h *hostEmulator) ProxyRedisCall(upstreamData *byte, upstreamSize int32, queryData *byte, querySize int32, calloutIDPtr *uint32) internal.Status {
-	log.Printf("ProxyRedisCall not implemented in the host emulator yet")
-	return 0
-}
-
-// impl internal.ProxyWasmHost
-func (h *hostEmulator) ProxyRedisInit(upstreamData *byte, upstreamSize int32, usernameData *byte, usernameSize int32, passwordData *byte, passwordSize int32, timeout uint32) internal.Status {
-	log.Printf("ProxyRedisInit not implemented in the host emulator yet")
 	return 0
 }
 
