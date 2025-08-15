@@ -55,6 +55,10 @@ type (
 		metricIDToValue map[uint32]uint64
 
 		pluginConfiguration, vmConfiguration []byte
+
+		// Add unique ID counters
+		nextHttpCalloutID  uint32
+		nextRedisCalloutID uint32
 	}
 
 	HttpCalloutAttribute struct {
@@ -273,7 +277,8 @@ func (r *rootHostEmulator) ProxyHttpCall(upstreamData *byte, upstreamSize int32,
 	log.Printf("[http callout to %s] body: %s", upstream, body)
 	log.Printf("[http callout to %s] trailers: %v", upstream, trailers)
 
-	calloutID := uint32(len(r.httpCalloutIDToContextID))
+	calloutID := r.nextHttpCalloutID
+	r.nextHttpCalloutID++
 	contextID := internal.VMStateGetActiveContextID()
 	r.httpCalloutIDToContextID[calloutID] = contextID
 	r.httpContextIDToCalloutInfos[contextID] = append(r.httpContextIDToCalloutInfos[contextID], HttpCalloutAttribute{
@@ -295,7 +300,8 @@ func (r *rootHostEmulator) ProxyRedisCall(upstreamData *byte, upstreamSize int32
 
 	log.Printf("[redis callout to %s] query: %v", upstream, query)
 
-	calloutID := uint32(len(r.redisCalloutIDToContextID))
+	calloutID := r.nextRedisCalloutID
+	r.nextRedisCalloutID++
 	contextID := internal.VMStateGetActiveContextID()
 	r.redisCalloutIDToContextID[calloutID] = contextID
 	r.redisContextIDToCalloutInfos[contextID] = append(r.redisContextIDToCalloutInfos[contextID], RedisCalloutAttribute{
