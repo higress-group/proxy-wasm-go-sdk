@@ -309,19 +309,19 @@ func (h *httpHostEmulator) httpHostEmulatorProxyGetHeaderMapPairs(mapType intern
 
 // impl internal.ProxyWasmHost
 func (h *httpHostEmulator) ProxySetHeaderMapPairs(mapType internal.MapType, mapData *byte, mapSize int32) internal.Status {
-	m := deserializeRawBytePtrToMap(mapData, mapSize)
+	m := cloneWithLowerCaseMapKeys(deserializeRawBytePtrToMap(mapData, mapSize))
 	active := internal.VMStateGetActiveContextID()
 	stream := h.httpStreams[active]
 
 	switch mapType {
 	case internal.MapTypeHttpRequestHeaders:
-		stream.requestHeaders = cloneWithLowerCaseMapKeys(m)
+		stream.requestHeaders = m
 	case internal.MapTypeHttpResponseHeaders:
-		stream.responseHeaders = cloneWithLowerCaseMapKeys(m)
+		stream.responseHeaders = m
 	case internal.MapTypeHttpRequestTrailers:
-		stream.requestTrailers = cloneWithLowerCaseMapKeys(m)
+		stream.requestTrailers = m
 	case internal.MapTypeHttpResponseTrailers:
-		stream.responseTrailers = cloneWithLowerCaseMapKeys(m)
+		stream.responseTrailers = m
 	default:
 		panic("unimplemented")
 	}
