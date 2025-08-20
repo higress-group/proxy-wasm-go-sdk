@@ -315,13 +315,13 @@ func (h *httpHostEmulator) ProxySetHeaderMapPairs(mapType internal.MapType, mapD
 
 	switch mapType {
 	case internal.MapTypeHttpRequestHeaders:
-		stream.requestHeaders = m
+		stream.requestHeaders = cloneWithLowerCaseMapKeys(m)
 	case internal.MapTypeHttpResponseHeaders:
-		stream.responseHeaders = m
+		stream.responseHeaders = cloneWithLowerCaseMapKeys(m)
 	case internal.MapTypeHttpRequestTrailers:
-		stream.requestTrailers = m
+		stream.requestTrailers = cloneWithLowerCaseMapKeys(m)
 	case internal.MapTypeHttpResponseTrailers:
-		stream.responseTrailers = m
+		stream.responseTrailers = cloneWithLowerCaseMapKeys(m)
 	default:
 		panic("unimplemented")
 	}
