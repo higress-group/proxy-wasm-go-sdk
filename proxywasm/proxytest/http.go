@@ -309,7 +309,7 @@ func (h *httpHostEmulator) httpHostEmulatorProxyGetHeaderMapPairs(mapType intern
 
 // impl internal.ProxyWasmHost
 func (h *httpHostEmulator) ProxySetHeaderMapPairs(mapType internal.MapType, mapData *byte, mapSize int32) internal.Status {
-	m := deserializeRawBytePtrToMap(mapData, mapSize)
+	m := cloneWithLowerCaseMapKeys(deserializeRawBytePtrToMap(mapData, mapSize))
 	active := internal.VMStateGetActiveContextID()
 	stream := h.httpStreams[active]
 
@@ -543,4 +543,13 @@ func (h *httpHostEmulator) SetProperty(path []string, data []byte) error {
 	return internal.StatusToError(internal.ProxySetProperty(
 		&raw[0], int32(len(raw)), &data[0], int32(len(data)),
 	))
+}
+
+// impl HostEmulator
+func (h *httpHostEmulator) SetHttpRequestHeaders(contextID uint32, headers [][2]string) {
+	cs, ok := h.httpStreams[contextID]
+	if !ok {
+		log.Fatalf("invalid context id: %d", contextID)
+	}
+	cs.requestHeaders = cloneWithLowerCaseMapKeys(headers)
 }

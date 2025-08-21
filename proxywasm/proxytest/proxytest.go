@@ -40,6 +40,10 @@ type HostEmulator interface {
 	GetCalloutAttributesFromContext(contextID uint32) []HttpCalloutAttribute
 	// CallOnHttpCallResponse executes the callback for the HTTP call with ID calloutID in the plugin.
 	CallOnHttpCallResponse(calloutID uint32, headers [][2]string, trailers [][2]string, body []byte)
+	// GetRedisCalloutAttributesFromContext returns the current Redis callout attributes for the given context in the host.
+	GetRedisCalloutAttributesFromContext(contextID uint32) []RedisCalloutAttribute
+	// CallOnRedisCallResponse executes the callback for the Redis call with ID calloutID in the plugin.
+	CallOnRedisCallResponse(calloutID uint32, status int32, response []byte)
 	// GetCounterMetric returns the value for the counter in the host.
 	GetCounterMetric(name string) (uint64, error)
 	// GetGaugeMetric returns the value for the gauge in the host.
@@ -131,6 +135,8 @@ type HostEmulator interface {
 	GetProperty(path []string) ([]byte, error)
 	// SetProperty sets property data on the host, for a given path.
 	SetProperty(path []string, data []byte) error
+	// SetHttpRequestHeader sets the request header for the HTTP stream with ID contextID in the host.
+	SetHttpRequestHeaders(contextID uint32, headers [][2]string)
 }
 
 const (
@@ -218,7 +224,7 @@ func getNextContextID() (ret uint32) {
 func (h *hostEmulator) ProxyGetBufferBytes(bt internal.BufferType, start int32, maxSize int32,
 	returnBufferData unsafe.Pointer, returnBufferSize *int32) internal.Status {
 	switch bt {
-	case internal.BufferTypePluginConfiguration, internal.BufferTypeVMConfiguration, internal.BufferTypeHttpCallResponseBody:
+	case internal.BufferTypePluginConfiguration, internal.BufferTypeVMConfiguration, internal.BufferTypeHttpCallResponseBody, internal.BufferTypeRedisCallResponse:
 		return h.rootHostEmulatorProxyGetBufferBytes(bt, start, maxSize, returnBufferData, returnBufferSize)
 	case internal.BufferTypeDownstreamData, internal.BufferTypeUpstreamData:
 		return h.networkHostEmulatorProxyGetBufferBytes(bt, start, maxSize, returnBufferData, returnBufferSize)
@@ -315,5 +321,23 @@ func (h *hostEmulator) ProxyCloseStream(streamType internal.StreamType) internal
 // impl internal.ProxyWasmHost
 func (h *hostEmulator) ProxyDone() internal.Status {
 	log.Printf("ProxyDone not implemented in the host emulator yet")
+	return 0
+}
+
+// impl internal.ProxyWasmHost
+func (h *hostEmulator) ProxyGetUpstreamHosts(returnValueData unsafe.Pointer, returnValueSize *int32) internal.Status {
+	log.Printf("ProxyGetUpstreamHosts not implemented in the host emulator yet")
+	return 0
+}
+
+// impl internal.ProxyWasmHost
+func (h *hostEmulator) ProxyInjectEncodedDataToFilterChain(bodyData *byte, bodySize int32, endStream bool) internal.Status {
+	log.Printf("ProxyInjectEncodedDataToFilterChain not implemented in the host emulator yet")
+	return 0
+}
+
+// impl internal.ProxyWasmHost
+func (h *hostEmulator) ProxySetUpstreamOverrideHost(bodyData *byte, bodySize int32) internal.Status {
+	log.Printf("ProxySetUpstreamOverrideHost not implemented in the host emulator yet")
 	return 0
 }

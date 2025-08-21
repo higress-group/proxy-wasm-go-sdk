@@ -76,6 +76,10 @@ func ProxyOnHttpCallResponse(pluginContextID, calloutID uint32, numHeaders, body
 	proxyOnHttpCallResponse(pluginContextID, calloutID, numHeaders, bodySize, numTrailers)
 }
 
+func ProxyOnRedisCallResponse(pluginContextID, calloutID uint32, status, responseSize int32) {
+	proxyOnRedisCallResponse(pluginContextID, calloutID, status, responseSize)
+}
+
 func ProxyOnContextCreate(contextID uint32, pluginContextID uint32) {
 	proxyOnContextCreate(contextID, pluginContextID)
 }
