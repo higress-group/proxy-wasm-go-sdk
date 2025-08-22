@@ -670,6 +670,36 @@ func exportHostABI(ctx context.Context, r wazero.Runtime) error {
 			return ret
 		}).
 		Export("proxy_call_foreign_function").
+		// proxy_inject_encoded_data_to_filter_chain injects encoded data to the filter chain.
+		NewFunctionBuilder().
+		WithParameterNames("body_data", "body_size", "end_stream").
+		WithResultNames("call_result").
+		WithFunc(func(ctx context.Context, mod api.Module, bodyData, bodySize, endStream uint32) uint32 {
+			bodyPtr := wasmBytePtr(mod, bodyData, bodySize)
+			return uint32(internal.ProxyInjectEncodedDataToFilterChain(bodyPtr, int32(bodySize), endStream == 1))
+		}).
+		Export("proxy_inject_encoded_data_to_filter_chain").
+		// proxy_get_upstream_hosts gets upstream hosts information.
+		NewFunctionBuilder().
+		WithParameterNames("return_value_data", "return_value_size").
+		WithResultNames("call_result").
+		WithFunc(func(ctx context.Context, mod api.Module, returnValueData, returnValueSize uint32) uint32 {
+			var returnValueHostPtr *byte
+			var returnValueSizePtr int32
+			ret := uint32(internal.ProxyGetUpstreamHosts(unsafe.Pointer(&returnValueHostPtr), &returnValueSizePtr))
+			copyBytesToWasm(ctx, mod, returnValueHostPtr, returnValueSizePtr, returnValueData, returnValueSize)
+			return ret
+		}).
+		Export("proxy_get_upstream_hosts").
+		// proxy_set_upstream_override_host sets upstream override host.
+		NewFunctionBuilder().
+		WithParameterNames("body_data", "body_size").
+		WithResultNames("call_result").
+		WithFunc(func(ctx context.Context, mod api.Module, bodyData, bodySize uint32) uint32 {
+			bodyPtr := wasmBytePtr(mod, bodyData, bodySize)
+			return uint32(internal.ProxySetUpstreamOverrideHost(bodyPtr, int32(bodySize)))
+		}).
+		Export("proxy_set_upstream_override_host").
 		// proxy_set_tick_period_milliseconds sets the timer period. Once set, the host environment will call
 		// proxy_on_tick every tick_period milliseconds.
 		//
