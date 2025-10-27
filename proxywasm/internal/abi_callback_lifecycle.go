@@ -44,16 +44,16 @@ func proxyOnDone(contextID uint32) bool {
 	if recordTiming {
 		defer logTiming("proxyOnDone", time.Now())
 	}
-	if ctx, ok := currentState.streams[contextID]; ok {
+	if ctx, ok := currentState.tcpContexts[contextID]; ok {
 		currentState.setActiveContextID(contextID)
 		return ctx.OnStreamDone()
-	} else if ctx, ok := currentState.httpStreams[contextID]; ok {
+	} else if ctx, ok := currentState.httpContexts[contextID]; ok {
 		currentState.setActiveContextID(contextID)
 		return ctx.OnHttpStreamDone()
-	} else if ctx, ok := currentState.rootContexts[contextID]; ok {
+	} else if ctx, ok := currentState.pluginContexts[contextID]; ok {
 		currentState.setActiveContextID(contextID)
 		return ctx.context.OnPluginDone()
-	} 
+	}
 	return true
 }
 
