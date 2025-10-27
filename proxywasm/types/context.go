@@ -122,7 +122,7 @@ type TcpContext interface {
 	// OnStreamDone is called before the host deletes this context.
 	// You can retrieve the stream information (such as remote addresses, etc.) during this call.
 	// This can be used to implement logging features.
-	OnStreamDone()
+	OnStreamDone() bool
 }
 
 // HttpContext corresponds to each Http stream and is created by PluginContext via NewHttpContext.
@@ -158,7 +158,7 @@ type HttpContext interface {
 	// OnHttpStreamDone is called before the host deletes this context.
 	// You can retrieve the HTTP request/response information (such as headers, etc.) during this call.
 	// This can be used to implement logging features.
-	OnHttpStreamDone()
+	OnHttpStreamDone() bool
 }
 
 // DefaultContexts are a no-op implementation of contexts.
@@ -213,7 +213,7 @@ func (*DefaultHttpContext) OnHttpRequestTrailers(int) Action       { return Acti
 func (*DefaultHttpContext) OnHttpResponseHeaders(int, bool) Action { return ActionContinue }
 func (*DefaultHttpContext) OnHttpResponseBody(int, bool) Action    { return ActionContinue }
 func (*DefaultHttpContext) OnHttpResponseTrailers(int) Action      { return ActionContinue }
-func (*DefaultHttpContext) OnHttpStreamDone() bool                 { return true}
+func (*DefaultHttpContext) OnHttpStreamDone() bool                 { return true }
 
 var (
 	_ VMContext     = &DefaultVMContext{}
