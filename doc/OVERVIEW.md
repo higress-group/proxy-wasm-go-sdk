@@ -453,13 +453,14 @@ By default, `runtime.GC()` is called when the size of freshly allocated data exc
 The GC can be explicitly run outside of the request path in order to eliminate any added latency. Such execution can be requested by plugin authors by executing the garbage collection in the `OnStreamDone()` (for TCP stream contexts) or `OnHttpStreamDone()` (for HTTP stream contexts) callback, like this: 
 
 ```go
-func (ctx *httpContext) OnHttpStreamDone() {
+func (ctx *httpContext) OnHttpStreamDone() bool {
     // Execute garbage collection if live + garbage allocations exceed 8MiB.
     var ms runtime.MemStats
     runtime.ReadMemStats(&ms)
     if ms.Alloc >= 8*1024*1024 { // 8 MiB
         runtime.GC()
     }
+    return true
 }
 ```
 

@@ -255,9 +255,10 @@ func (h *httpContext) OnHttpResponseTrailers(numTrailers int) types.Action {
 }
 
 // OnHttpStreamDone implements the same method on types.HttpContext.
-func (h *httpContext) OnHttpStreamDone() {
+func (h *httpContext) OnHttpStreamDone() bool {
 	_, err := h.abi.proxyOnLog.Call(h.ctx, h.id)
 	handleErr(err)
+	return true
 }
 
 func handleErr(err error) {

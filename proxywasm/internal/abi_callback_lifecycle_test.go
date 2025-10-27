@@ -92,12 +92,14 @@ func (ctx *lifecycleContext) OnPluginDone() bool {
 	return true
 }
 
-func (ctx *lifecycleContext) OnStreamDone() {
+func (ctx *lifecycleContext) OnStreamDone() bool {
 	ctx.onDoneCalled = true
+	return true
 }
 
-func (ctx *lifecycleContext) OnHttpStreamDone() {
+func (ctx *lifecycleContext) OnHttpStreamDone() bool {
 	ctx.onDoneCalled = true
+	return true
 }
 
 func Test_onDone_or_onLog(t *testing.T) {
