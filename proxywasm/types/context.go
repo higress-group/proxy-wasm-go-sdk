@@ -203,7 +203,7 @@ func (*DefaultTcpContext) OnDownstreamClose(PeerType)        {}
 func (*DefaultTcpContext) OnNewConnection() Action           { return ActionContinue }
 func (*DefaultTcpContext) OnUpstreamData(int, bool) Action   { return ActionContinue }
 func (*DefaultTcpContext) OnUpstreamClose(PeerType)          {}
-func (*DefaultTcpContext) OnStreamDone()                     {}
+func (*DefaultTcpContext) OnStreamDone() bool                { return true }
 
 // impl HttpContext
 
@@ -213,7 +213,7 @@ func (*DefaultHttpContext) OnHttpRequestTrailers(int) Action       { return Acti
 func (*DefaultHttpContext) OnHttpResponseHeaders(int, bool) Action { return ActionContinue }
 func (*DefaultHttpContext) OnHttpResponseBody(int, bool) Action    { return ActionContinue }
 func (*DefaultHttpContext) OnHttpResponseTrailers(int) Action      { return ActionContinue }
-func (*DefaultHttpContext) OnHttpStreamDone()                      {}
+func (*DefaultHttpContext) OnHttpStreamDone() bool                 { return true}
 
 var (
 	_ VMContext     = &DefaultVMContext{}
