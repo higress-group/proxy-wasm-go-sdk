@@ -40,6 +40,13 @@ type (
 		// content of body is sent to the upstream or downstream.
 		requestBody, responseBody []byte
 
+		// injectedResponseData stores data injected by ProxyInjectEncodedDataToFilterChain
+		// This is used for SSE streaming responses and other scenarios where the plugin
+		// needs to inject custom response data
+		injectedResponseData []byte
+		// hasInjectedData indicates whether response data has been injected
+		hasInjectedData bool
+
 		action            types.Action
 		sentLocalResponse *LocalHttpResponse
 	}
@@ -495,6 +502,14 @@ func (h *httpHostEmulator) GetCurrentResponseBody(contextID uint32) []byte {
 	if !ok {
 		log.Fatalf("invalid context id: %d", contextID)
 	}
+	// If data was injected via ProxyInjectEncodedDataToFilterChain, return that instead
+	// TODO: This is a simplified implementation. In most use cases, InjectEncodedData is used
+	// to bypass the original response body stream and fully control the body content.
+	// Future enhancements may need to support scenarios where partial response body has already
+	// been sent before injecting data (e.g., appending injected data to existing response body).
+	if stream.hasInjectedData {
+		return stream.injectedResponseData
+	}
 	return stream.responseBody
 }
 
@@ -552,4 +567,30 @@ func (h *httpHostEmulator) SetHttpRequestHeaders(contextID uint32, headers [][2]
 		log.Fatalf("invalid context id: %d", contextID)
 	}
 	cs.requestHeaders = cloneWithLowerCaseMapKeys(headers)
+}
+
+// impl internal.ProxyWasmHost
+func (h *httpHostEmulator) ProxyInjectEncodedDataToFilterChain(bodyData *byte, bodySize int32, endStream bool) internal.Status {
+	active := internal.VMStateGetActiveContextID()
+	stream, ok := h.httpStreams[active]
+	if !ok {
+		log.Fatalf("invalid context id: %d", active)
+	}
+
+	// Copy the injected data to the stream's injectedResponseData
+	if bodySize > 0 && bodyData != nil {
+		data := unsafe.Slice(bodyData, bodySize)
+		// If this is a fresh injection, reset the buffer
+		if !stream.hasInjectedData {
+			stream.injectedResponseData = nil
+		}
+		stream.injectedResponseData = append(stream.injectedResponseData, data...)
+	}
+
+	// If endStream is true, mark that we have injected data
+	if endStream {
+		stream.hasInjectedData = true
+	}
+
+	return internal.StatusOK
 }
