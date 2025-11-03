@@ -332,8 +332,7 @@ func (h *hostEmulator) ProxyGetUpstreamHosts(returnValueData unsafe.Pointer, ret
 
 // impl internal.ProxyWasmHost
 func (h *hostEmulator) ProxyInjectEncodedDataToFilterChain(bodyData *byte, bodySize int32, endStream bool) internal.Status {
-	log.Printf("ProxyInjectEncodedDataToFilterChain not implemented in the host emulator yet")
-	return 0
+	return h.httpHostEmulator.ProxyInjectEncodedDataToFilterChain(bodyData, bodySize, endStream)
 }
 
 // impl internal.ProxyWasmHost
