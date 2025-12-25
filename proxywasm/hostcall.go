@@ -887,6 +887,12 @@ func (m MetricGauge) Add(offset int64) {
 	}
 }
 
+func (m MetricGauge) Set(value uint64) {
+	if err := internal.StatusToError(internal.ProxyRecordMetric(uint32(m), value)); err != nil {
+		panic(fmt.Sprintf("error adding %d: %v", uint32(m), err))
+	}
+}
+
 // DefineHistogramMetric returns MetricHistogram for a name.
 func DefineHistogramMetric(name string) MetricHistogram {
 	var id uint32
