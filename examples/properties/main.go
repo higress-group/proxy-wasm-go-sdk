@@ -76,6 +76,7 @@ func (ctx *properties) OnHttpRequestHeaders(numHeaders int, endOfStream bool) ty
 }
 
 // OnHttpStreamDone implements types.HttpContext.
-func (ctx *properties) OnHttpStreamDone() {
+func (ctx *properties) OnHttpStreamDone() bool {
 	proxywasm.LogInfof("%d finished", ctx.contextID)
+	return true
 }

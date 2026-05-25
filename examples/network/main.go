@@ -119,7 +119,8 @@ func (ctx *networkContext) OnUpstreamData(dataSize int, endOfStream bool) types.
 }
 
 // OnStreamDone implements types.TcpContext.
-func (ctx *networkContext) OnStreamDone() {
+func (ctx *networkContext) OnStreamDone() bool {
 	ctx.counter.Increment(1)
 	proxywasm.LogInfo("connection complete!")
+	return true
 }

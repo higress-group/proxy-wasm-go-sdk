@@ -37,13 +37,6 @@ func proxyOnLog(contextID uint32) {
 	if recordTiming {
 		defer logTiming("proxyOnLog", time.Now())
 	}
-	if ctx, ok := currentState.tcpContexts[contextID]; ok {
-		currentState.setActiveContextID(contextID)
-		ctx.OnStreamDone()
-	} else if ctx, ok := currentState.httpContexts[contextID]; ok {
-		currentState.setActiveContextID(contextID)
-		ctx.OnHttpStreamDone()
-	}
 }
 
 //go:wasmexport proxy_on_done
@@ -51,7 +44,13 @@ func proxyOnDone(contextID uint32) bool {
 	if recordTiming {
 		defer logTiming("proxyOnDone", time.Now())
 	}
-	if ctx, ok := currentState.pluginContexts[contextID]; ok {
+	if ctx, ok := currentState.tcpContexts[contextID]; ok {
+		currentState.setActiveContextID(contextID)
+		return ctx.OnStreamDone()
+	} else if ctx, ok := currentState.httpContexts[contextID]; ok {
+		currentState.setActiveContextID(contextID)
+		return ctx.OnHttpStreamDone()
+	} else if ctx, ok := currentState.pluginContexts[contextID]; ok {
 		currentState.setActiveContextID(contextID)
 		return ctx.context.OnPluginDone()
 	}

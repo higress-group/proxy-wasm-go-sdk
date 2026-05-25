@@ -92,8 +92,9 @@ func (c *timedHttpContext) OnHttpResponseTrailers(int) types.Action {
 }
 
 // OnHttpStreamDone implements the same method on types.HttpContext.
-func (c *timedHttpContext) OnHttpStreamDone() {
+func (c *timedHttpContext) OnHttpStreamDone() bool {
 	time.Sleep(1 * time.Millisecond)
+	return true
 }
 
 type timedTcpContext struct {
@@ -128,8 +129,9 @@ func (t timedTcpContext) OnUpstreamClose(types.PeerType) {
 }
 
 // OnStreamDone implements the same method on types.TcpContext.
-func (t timedTcpContext) OnStreamDone() {
+func (t timedTcpContext) OnStreamDone() bool {
 	time.Sleep(1 * time.Millisecond)
+	return true
 }
 
 // Execute lifecycle methods, there should be logs for the no-op plugin.
