@@ -100,10 +100,18 @@ func NewWasmVMContext(wasm []byte) (WasmVMContext, error) {
 		return nil, err
 	}
 
+	// Expose the host wall clock and monotonic clock to the wasm guest so that
+	// time.Now() (which goes through WASI clock_time_get when compiled to wasm)
+	// returns real time. Without these, wazero's default clocks return epoch
+	// (1970-01-01) for walltime and 0 for nanotime, which breaks any plugin
+	// logic that compares timestamps to "now" — e.g. clock-skew validation in
+	// hmac-auth, JWT exp/nbf checks, request-deadline computations.
 	wazeroconfig := wazero.NewModuleConfig().
 		WithStartFunctions("_initialize", "_start", "main").
 		WithStdout(os.Stderr).
-		WithStderr(os.Stderr)
+		WithStderr(os.Stderr).
+		WithSysWalltime().
+		WithSysNanotime()
 	mod, err := r.InstantiateModule(ctx, compiled, wazeroconfig)
 	if err != nil {
 		return nil, err
