@@ -15,6 +15,7 @@
 package proxywasm
 
 import (
+	"encoding/binary"
 	"testing"
 	"unsafe"
 
@@ -27,6 +28,41 @@ type logHost struct {
 	t           *testing.T
 	expMessage  string
 	expLogLevel internal.LogLevel
+}
+
+type logLevelHost struct {
+	internal.DefaultProxyWAMSHost
+	levelData [4]byte
+	logCalls  int
+}
+
+func newLogLevelHost(level internal.LogLevel) *logLevelHost {
+	host := &logLevelHost{}
+	binary.LittleEndian.PutUint32(host.levelData[:], uint32(level))
+	return host
+}
+
+func (l *logLevelHost) ProxyCallForeignFunction(funcNamePtr *byte, funcNameSize int32, _ *byte, _ int32, returnData unsafe.Pointer, returnSize *int32) internal.Status {
+	if unsafe.String(funcNamePtr, funcNameSize) != "get_log_level" {
+		return internal.StatusBadArgument
+	}
+	*(*unsafe.Pointer)(returnData) = unsafe.Pointer(&l.levelData[0])
+	*returnSize = int32(len(l.levelData))
+	return internal.StatusOK
+}
+
+func (l *logLevelHost) ProxyLog(_ internal.LogLevel, _ *byte, _ int32) internal.Status {
+	l.logCalls++
+	return internal.StatusOK
+}
+
+type countingStringer struct {
+	calls *int
+}
+
+func (s countingStringer) String() string {
+	*s.calls++
+	return "large response body"
 }
 
 func (l logHost) ProxyLog(logLevel internal.LogLevel, messageData *byte, messageSize int32) internal.Status {
@@ -176,6 +212,30 @@ func TestHostCall_Logging(t *testing.T) {
 		defer release()
 		LogCriticalf("critical: %s: %d", "log", 10)
 	})
+}
+
+func TestLogDebugfSkipsFormattingWhenDebugDisabled(t *testing.T) {
+	host := newLogLevelHost(internal.LogLevelInfo)
+	release := internal.RegisterMockWasmHost(host)
+	defer release()
+
+	formatCalls := 0
+	LogDebugf("response body: %s", countingStringer{calls: &formatCalls})
+
+	require.Equal(t, 0, formatCalls)
+	require.Equal(t, 0, host.logCalls)
+}
+
+func TestLogDebugfFormatsWhenDebugEnabled(t *testing.T) {
+	host := newLogLevelHost(internal.LogLevelDebug)
+	release := internal.RegisterMockWasmHost(host)
+	defer release()
+
+	formatCalls := 0
+	LogDebugf("response body: %s", countingStringer{calls: &formatCalls})
+
+	require.Equal(t, 1, formatCalls)
+	require.Equal(t, 1, host.logCalls)
 }
 
 type metricProxyWasmHost struct {

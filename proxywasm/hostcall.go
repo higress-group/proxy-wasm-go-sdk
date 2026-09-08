@@ -15,6 +15,7 @@
 package proxywasm
 
 import (
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"math"
@@ -752,8 +753,20 @@ func LogDebug(msg string) {
 // https://tinygo.org/docs/reference/lang-support/stdlib/#fmt for more
 // information.
 func LogDebugf(format string, args ...interface{}) {
+	if !isLogLevelEnabled(internal.LogLevelDebug) {
+		return
+	}
 	msg := fmt.Sprintf(format, args...)
 	internal.ProxyLog(internal.LogLevelDebug, internal.StringBytePtr(msg), int32(len(msg)))
+}
+
+func isLogLevelEnabled(level internal.LogLevel) bool {
+	value, err := CallForeignFunction("get_log_level", nil)
+	if err != nil || len(value) < 4 {
+		// Preserve compatibility with hosts that do not provide get_log_level.
+		return true
+	}
+	return level >= internal.LogLevel(binary.LittleEndian.Uint32(value))
 }
 
 // LogInfo emits a message as a log with Info log level.
