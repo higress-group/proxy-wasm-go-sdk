@@ -177,7 +177,7 @@ func InjectEncodedDataToFilterChain(body []byte, endStream bool) error {
 	case internal.StatusOK:
 		return nil
 	default:
-		return fmt.Errorf("error occured when inject encoded data to filter chain")
+		return fmt.Errorf("error occurred when inject encoded data to filter chain")
 	}
 }
 
@@ -209,7 +209,7 @@ func SetUpstreamOverrideHost(address []byte) error {
 	case internal.StatusOK:
 		return nil
 	default:
-		return fmt.Errorf("error occured when override upstream host")
+		return fmt.Errorf("error occurred when override upstream host")
 	}
 }
 

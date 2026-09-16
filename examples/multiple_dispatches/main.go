@@ -91,7 +91,7 @@ func (ctx *httpContext) dispatchCallback(numHeaders, bodySize, numTrailers int) 
 		// This case, all the dispatched request was processed.
 		// Adds a response header to the original response.
 		_ = proxywasm.AddHttpResponseHeader("total-dispatched", strconv.Itoa(totalDispatchNum))
-		// And then contniue the original reponse.
+		// And then continue the original response.
 		_ = proxywasm.ResumeHttpResponse()
 		proxywasm.LogInfof("response resumed after processed %d dispatched request", totalDispatchNum)
 	} else {
