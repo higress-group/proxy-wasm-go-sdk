@@ -28,11 +28,30 @@ var (
 	mutex       = &sync.Mutex{}
 )
 
+// RegisterMockWasmHost registers the host that the mock hostcalls talk to and
+// returns the function that releases it.
+//
+// The lock is **process-wide** and it is held for the **whole lifetime of the
+// host**, so a host that is created but never released blocks every later
+// RegisterMockWasmHost call. That is not a slow test, it is a wedged test
+// binary: the process sits there with no output and not even the "go test"
+// timeout panic can be printed, because the runtime is stuck waiting for the
+// lock.
+//
+// So don't wait for the lock: fail right away, and say what went wrong. The
+// panic happens on the caller's goroutine, so the testing package turns it
+// into a normal test failure instead of taking the whole binary down.
 func RegisterMockWasmHost(host ProxyWasmHost) (release func()) {
-	mutex.Lock()
+	if !mutex.TryLock() {
+		panic("the previous test host was never released: the mock host's " +
+			"process-wide lock is still held (call host.Reset())")
+	}
 	currentHost = host
+	// Releasing twice must be harmless: unlocking a mutex that is not held is
+	// a fatal error, and "reset the host twice" is an easy mistake to make.
+	var once sync.Once
 	return func() {
-		mutex.Unlock()
+		once.Do(mutex.Unlock)
 	}
 }
 
